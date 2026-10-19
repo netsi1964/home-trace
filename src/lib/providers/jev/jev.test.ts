@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { BudgetExceededError, JobBudget } from '../types.ts';
 import { edgesToBox, imagePart, JEV_MODEL, redactRequest } from './contract.ts';
-import { countRequest, DEFAULT_CATEGORIES, locateRequest, readCounts, readIdentity, readLocations } from './discovery.ts';
+import { countRequest, DEFAULT_CATEGORIES, locateRequest, mergeStripDetections, readCounts, readIdentity, readLocations, readStrip, STRIPS } from './discovery.ts';
 import { createJevTransport, JevRequestError, stripBase64 } from './jev.server.ts';
 
 const part = imagePart('image/jpeg', 'AAAA');
@@ -40,7 +40,8 @@ describe('count then locate', () => {
 		expect(Object.keys(req.questions).sort()).toEqual(
 			['present__lamp__0', 'box__lamp__0', 'present__cup__0', 'box__cup__0', 'present__cup__1', 'box__cup__1'].sort()
 		);
-		expect(req.questions.box__cup__1.instructions).toBe('the second cup or mug from the left in the photo');
+		expect(req.questions.box__cup__0.instructions).toBe('the leftmost cup or mug in the photo');
+		expect(req.questions.box__cup__1.instructions).toBe('the rightmost cup or mug in the photo');
 		expect(req.questions.box__lamp__0.type).toBe('box');
 	});
 
@@ -86,6 +87,17 @@ describe('count then locate', () => {
 		expect(rejected[0].reason).toMatch(/below presence threshold/);
 	});
 
+	it('drops a second box that repeats the same instance', () => {
+		const same = { type: 'box', box: { top: 0.4, bottom: 0.5, left: 0.1, right: 0.2 }, confidence: 0.9 };
+		const { detections, rejected } = readLocations(
+			{ answers: { present__cup__0: { type: 'noul', noul: 0.9 }, box__cup__0: same, present__cup__1: { type: 'noul', noul: 0.9 }, box__cup__1: same } },
+			[{ category: cup, count: 2, confidence: null }],
+			{ presenceThreshold: 0.5, supportedThreshold: 0.8, newId: () => 'x' }
+		);
+		expect(detections).toHaveLength(1);
+		expect(rejected[0].reason).toMatch(/^duplicate__cup__1/);
+	});
+
 	it('keeps missing confidence as null', () => {
 		const { detections } = readLocations(
 			{
@@ -99,6 +111,35 @@ describe('count then locate', () => {
 		);
 		expect(detections[0].providerConfidence).toBeNull();
 		expect(detections[0].presence).toBe('uncertain');
+	});
+});
+
+describe('strips for repeated instances', () => {
+	const opts = { presenceThreshold: 0.5, supportedThreshold: 0.8, newId: () => crypto.randomUUID() };
+	const answer = (left: number, right: number, noul = 0.9) => ({
+		answers: {
+			present__cup: { type: 'noul', noul },
+			box__cup: { type: 'box', box: { top: 0.4, bottom: 0.5, left, right }, confidence: 0.9 }
+		}
+	});
+
+	it('maps strip boxes back to full-frame coordinates', () => {
+		const { detections } = readStrip(answer(0.5, 0.6), [cup], STRIPS[2], opts);
+		expect(detections[0].box.x).toBeCloseTo(0.55 + 0.5 * 0.45);
+		expect(detections[0].box.width).toBeCloseTo(0.1 * 0.45);
+	});
+
+	it('merges the same cup seen in two overlapping strips and caps at the counted number', () => {
+		const a = readStrip(answer(0.5, 0.7), [cup], STRIPS[0], opts).detections; // x ≈ 0.225–0.315
+		const b = readStrip(answer(0.0, 0.1), [cup], STRIPS[1], opts).detections; // x ≈ 0.275–0.32, same cup cut at the edge
+		const c = readStrip(answer(0.5, 0.7), [cup], STRIPS[2], opts).detections; // x ≈ 0.775–0.865
+		const { kept, dropped } = mergeStripDetections([...a, ...b, ...c], new Map([['cup', 2]]));
+		expect(kept).toHaveLength(2);
+		expect(dropped[0].reason).toMatch(/^duplicate__cup/);
+	});
+
+	it('ignores a strip whose presence check is low', () => {
+		expect(readStrip(answer(0.1, 0.2, 0.2), [cup], STRIPS[0], opts).detections).toHaveLength(0);
 	});
 });
 

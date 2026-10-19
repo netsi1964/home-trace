@@ -26,7 +26,7 @@ import { JEV_MODEL } from '../src/lib/providers/jev/contract.ts';
 import { addUsage, createJevTransport, emptyUsage } from '../src/lib/providers/jev/jev.server.ts';
 import { createJevProvider } from '../src/lib/providers/jev/provider.server.ts';
 import { createDemoProvider } from './lib/demoProvider.ts';
-import { cropBox, prepareFrame, type PreparedImage } from './lib/images.ts';
+import { cropBox, cropRegion, prepareFrame, type PreparedImage } from './lib/images.ts';
 
 const PER_JOB_LIMIT = 20; // PRD-FEAT-010 suggested MVP limit
 
@@ -54,8 +54,8 @@ const selected = args.images ? new Set(args.images.split(',')) : null;
 const images = gt.images.filter((i) => !selected || selected.has(i.id));
 const pairs = args['no-identity'] ? [] : pickPairs(identityPairs({ ...gt, images }), maxPairs);
 
-// Upper bound: two requests per image (count + locate) and one per identity pair.
-const plannedRequests = images.length * 2 + pairs.length;
+// Upper bound: count + locate + one per strip for each image, and one per identity pair.
+const plannedRequests = images.length * 5 + pairs.length;
 const isDemo = providerId === 'demo' || gt.demo;
 
 console.log(`Fixtures: ${fixturesDir}${gt.demo ? ' [Demo fixtures]' : ''}`);
@@ -81,7 +81,8 @@ const provider: AnalysisProvider =
 				transport: createJevTransport({
 					apiKey: process.env.OPEN_ROUTER_API_KEY ?? '',
 					log: (e) => technicalLog.push(e)
-				})
+				}),
+				crop: (image, region) => cropRegion(image, region)
 			})
 		: createDemoProvider({ frame: (img) => frameSource.get(img), crop: (img) => cropSource.get(img) });
 
@@ -102,7 +103,7 @@ for (const image of images) {
 		const r = await provider.discover(frame, job);
 		usage = addUsage(usage, r.usage);
 		validBoxes += r.detections.length;
-		rejectedBoxes += r.rejected.filter((x) => x.reason.includes('box') && !x.reason.includes('presence')).length;
+		rejectedBoxes += r.rejected.filter((x) => x.reason.startsWith('box__')).length;
 		const score = scoreImage(image, r.detections.map((d) => ({ label: d.label, box: d.box })));
 		detectionResults.push({ ...score, durationMs: r.durationMs, requests: r.usage.requests, detections: r.detections, rejected: r.rejected });
 		console.log(`  ${image.id}: TP ${score.truePositives} FP ${score.falsePositives} FN ${score.falseNegatives} (${r.usage.requests} req, ${r.durationMs} ms)`);

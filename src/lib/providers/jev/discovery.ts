@@ -1,3 +1,4 @@
+import { iou, parseBox, type Box } from '../../geometry/box.ts';
 import type { Detection, MatchProposal } from '../types.ts';
 import {
 	edgesToBox,
@@ -16,7 +17,7 @@ import {
  *
  * 1. Count request: one Choice per category (none / one / two / three / four_or_more).
  * 2. Locate request: for each counted instance, one Noul presence check plus one Box,
- *    described by order from the left ("the second chair from the left").
+ *    described by position ("the leftmost chair").
  *
  * Two requests per image regardless of the number of categories. Instances beyond
  * MAX_INSTANCES_PER_CATEGORY are not located; that limitation shows up as missed objects.
@@ -50,7 +51,9 @@ export const DEFAULT_CATEGORIES: Category[] = [
 export const MAX_INSTANCES_PER_CATEGORY = 3;
 
 const COUNTS = { none: 0, one: 1, two: 2, three: 3, four_or_more: 4 } as const;
-const ORDINALS = ['first', 'second', 'third'];
+
+/** Boxes of the same category overlapping this much are the same instance answered twice. */
+export const DUPLICATE_IOU = 0.7;
 
 const PHOTO_LABEL = 'Photo of part of a room in a home:';
 
@@ -97,10 +100,17 @@ function slots(counts: CategoryCount[]): Slot[] {
 	});
 }
 
+/**
+ * Position words for repeated instances. Measured on Demo fixtures 2026-10-19: "the second cup
+ * from the left" returned the same box as the first, so extremes ("leftmost", "rightmost") are used.
+ */
 function describe(s: Slot): string {
-	return s.total === 1
-		? `the ${s.category.singular} in the photo`
-		: `the ${ORDINALS[s.index]} ${s.category.singular} from the left in the photo`;
+	const name = s.category.singular;
+	if (s.total === 1) return `the ${name} in the photo`;
+	const located = Math.min(s.total, MAX_INSTANCES_PER_CATEGORY);
+	if (s.index === 0) return `the leftmost ${name} in the photo`;
+	if (s.index === located - 1 && s.total <= MAX_INSTANCES_PER_CATEGORY) return `the rightmost ${name} in the photo`;
+	return `the ${name} in the photo that is neither the leftmost nor the rightmost one`;
 }
 
 export function locateRequest(model: string, image: ImagePart, counts: CategoryCount[]): DecisionsRequest | null {
@@ -157,6 +167,12 @@ export function readLocations(
 			rejected.push({ reason: `box__${k}: invalid edges`, raw: safeJson(b.value.box) });
 			continue;
 		}
+		const twin = detections.find((d) => d.category === s.category.key && iou(d.box, box) >= DUPLICATE_IOU);
+		if (twin) {
+			// Not a box error: the same instance was answered for two slots (repeated-instance failure).
+			rejected.push({ reason: `duplicate__${k}: same instance as an earlier ${s.category.key}`, raw: safeJson(b.value.box) });
+			continue;
+		}
 		detections.push({
 			id: opts.newId(),
 			label: s.category.singular,
@@ -204,4 +220,106 @@ function safeJson(v: unknown): string {
 	} catch {
 		return '[unserialisable]';
 	}
+}
+
+/**
+ * Region splitting for repeated instances, as the Box docs recommend ("split the image into
+ * regions and ask again on each"). Measured on Demo fixtures 2026-10-19: position words such as
+ * "the rightmost cup" still returned the left cup, so categories counted two or more times are
+ * located per overlapping vertical strip instead.
+ */
+export const STRIPS: Box[] = [
+	{ x: 0, y: 0, width: 0.45, height: 1 },
+	{ x: 0.275, y: 0, width: 0.45, height: 1 },
+	{ x: 0.55, y: 0, width: 0.45, height: 1 }
+];
+
+const CROP_LABEL = 'Vertical strip cut from a photo of part of a room in a home:';
+
+export function stripRequest(model: string, strip: ImagePart, categories: Category[]): DecisionsRequest | null {
+	const questions: Record<string, Question> = {};
+	for (const c of categories) {
+		questions[`present__${c.key}`] = { type: 'noul', instructions: `A ${c.singular} is clearly visible in the image.` };
+		questions[`box__${c.key}`] = { type: 'box', instructions: `the ${c.singular} in the image` };
+	}
+	return categories.length > 0 ? { model, state: [CROP_LABEL, strip], questions } : null;
+}
+
+/** Reads one strip's answers and maps boxes back to full-frame coordinates. */
+export function readStrip(
+	res: DecisionsResponse,
+	categories: Category[],
+	region: Box,
+	opts: LocateOptions
+): { detections: Detection[]; rejected: { reason: string; raw: string }[] } {
+	const detections: Detection[] = [];
+	const rejected: { reason: string; raw: string }[] = [];
+	const tag = `strip@${region.x}`;
+	for (const c of categories) {
+		const p = readNoul(res.answers[`present__${c.key}`]);
+		const b = readBox(res.answers[`box__${c.key}`]);
+		if (!b.ok) {
+			rejected.push({ reason: `box__${c.key} ${tag}: ${b.reason}`, raw: safeJson(res.answers[`box__${c.key}`]) });
+			continue;
+		}
+		if (!p.ok || p.value.noul < opts.presenceThreshold) {
+			rejected.push({ reason: `present__${c.key} ${tag}: ${p.ok ? 'below presence threshold' : p.reason}`, raw: p.ok ? String(p.value.noul) : '' });
+			continue;
+		}
+		const local = edgesToBox(b.value.box);
+		const box = local && parseBox({
+			x: region.x + local.x * region.width,
+			y: region.y + local.y * region.height,
+			width: local.width * region.width,
+			height: local.height * region.height
+		});
+		if (!box) {
+			rejected.push({ reason: `box__${c.key} ${tag}: invalid edges`, raw: safeJson(b.value.box) });
+			continue;
+		}
+		detections.push({
+			id: opts.newId(),
+			label: c.singular,
+			category: c.key,
+			box,
+			source: 'jev',
+			providerConfidence: b.value.confidence ?? null,
+			presence: p.value.noul >= opts.supportedThreshold ? 'supported' : 'uncertain'
+		});
+	}
+	return { detections, rejected };
+}
+
+/**
+ * Merges strip detections: strips overlap, so one object can be found twice, possibly cut at a
+ * strip edge. A box mostly inside another of the same category is the same instance; the larger
+ * box wins. Keeps at most `limit` per category, largest boxes first.
+ */
+export function mergeStripDetections(
+	detections: Detection[],
+	limit: Map<string, number>
+): { kept: Detection[]; dropped: { reason: string; raw: string }[] } {
+	const kept: Detection[] = [];
+	const dropped: { reason: string; raw: string }[] = [];
+	const byArea = [...detections].sort((a, b) => b.box.width * b.box.height - a.box.width * a.box.height);
+	for (const d of byArea) {
+		const same = kept.find((k) => k.category === d.category && coverOfSmaller(k.box, d.box) >= 0.6);
+		if (same) {
+			dropped.push({ reason: `duplicate__${d.category}: same instance seen in two strips`, raw: safeJson(d.box) });
+			continue;
+		}
+		const n = kept.filter((k) => k.category === d.category).length;
+		if (n >= (limit.get(d.category ?? '') ?? Infinity)) {
+			dropped.push({ reason: `excess__${d.category}: more boxes than counted`, raw: safeJson(d.box) });
+			continue;
+		}
+		kept.push(d);
+	}
+	return { kept, dropped };
+}
+
+function coverOfSmaller(a: Box, b: Box): number {
+	const ix = Math.max(0, Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x));
+	const iy = Math.max(0, Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y));
+	return (ix * iy) / Math.min(a.width * a.height, b.width * b.height);
 }

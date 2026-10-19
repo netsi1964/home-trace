@@ -60,3 +60,13 @@ export async function cropBox(frame: PreparedImage, box: Box, pad = 0.05): Promi
 		.toBuffer();
 	return { mimeType: 'image/jpeg', width: outW, height: outH, bytes: new Uint8Array(bytes) };
 }
+
+/** Crops a normalised region without padding or upscaling. Strips below the provider minimum are rejected later. */
+export async function cropRegion(frame: AnalysisImage, region: Box): Promise<AnalysisImage> {
+	const left = Math.round(region.x * frame.width);
+	const top = Math.round(region.y * frame.height);
+	const width = Math.min(frame.width - left, Math.round(region.width * frame.width));
+	const height = Math.min(frame.height - top, Math.round(region.height * frame.height));
+	const bytes = await sharp(Buffer.from(frame.bytes)).extract({ left, top, width, height }).jpeg({ quality: 90 }).toBuffer();
+	return { mimeType: 'image/jpeg', width, height, bytes: new Uint8Array(bytes) };
+}

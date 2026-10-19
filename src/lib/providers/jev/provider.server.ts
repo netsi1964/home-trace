@@ -1,14 +1,20 @@
-import type { AnalysisImage, AnalysisProvider, DiscoveryResult, IdentityResult, JobBudget } from '../types.ts';
+import type { Box } from '../../geometry/box.ts';
+import type { AnalysisImage, AnalysisProvider, Detection, DiscoveryResult, IdentityResult, JobBudget } from '../types.ts';
 import { imagePart, JEV_IMAGE_LIMITS, JEV_MODEL, type JevImageMime } from './contract.ts';
 import {
 	countRequest,
 	DEFAULT_CATEGORIES,
 	identityRequest,
 	locateRequest,
+	mergeStripDetections,
 	readCounts,
+	readStrip,
+	stripRequest,
+	STRIPS,
 	readIdentity,
 	readLocations,
 	type Category,
+	type CategoryCount,
 	type IdentityThresholds
 } from './discovery.ts';
 import { addUsage, emptyUsage, type JevTransport } from './jev.server.ts';
@@ -21,6 +27,12 @@ export type JevProviderOptions = {
 	supportedThreshold?: number;
 	identity?: IdentityThresholds;
 	newId?: () => string;
+	/**
+	 * Crops a normalised region of the frame. When given, categories counted two or more times
+	 * are located per strip (one extra request per strip). Without it, they use position words,
+	 * which failed on Demo fixtures.
+	 */
+	crop?: (image: AnalysisImage, region: Box) => Promise<AnalysisImage>;
 };
 
 /** Starting points only. No documented thresholds exist; tune them on fixtures in Phase 0. */
@@ -62,14 +74,40 @@ export function createJevProvider(opts: JevProviderOptions): AnalysisProvider {
 			let usage = first.usage;
 			let durationMs = first.durationMs;
 
-			const locate = locateRequest(model, part, counts);
-			if (!locate) return { detections: [], rejected, usage, durationMs };
+			const repeated = opts.crop ? counts.filter((c) => c.count >= 2) : [];
+			const singles = counts.filter((c) => !repeated.includes(c));
+			const detections: Detection[] = [];
+			const allRejected = [...rejected];
+			const locateOpts = { presenceThreshold, supportedThreshold, newId };
 
-			const second = await opts.transport.send(locate, budget, signal);
-			usage = addUsage(usage, second.usage);
-			durationMs += second.durationMs;
-			const located = readLocations(second.response, counts, { presenceThreshold, supportedThreshold, newId });
-			return { detections: located.detections, rejected: [...rejected, ...located.rejected], usage, durationMs };
+			const locate = locateRequest(model, part, singles);
+			if (locate) {
+				const r = await opts.transport.send(locate, budget, signal);
+				usage = addUsage(usage, r.usage);
+				durationMs += r.durationMs;
+				const located = readLocations(r.response, singles, locateOpts);
+				detections.push(...located.detections);
+				allRejected.push(...located.rejected);
+			}
+
+			if (repeated.length > 0 && opts.crop) {
+				const found: Detection[] = [];
+				for (const region of STRIPS) {
+					const strip = await opts.crop(image, region);
+					const req = stripRequest(model, toPart(strip), repeated.map((c: CategoryCount) => c.category))!;
+					const r = await opts.transport.send(req, budget, signal);
+					usage = addUsage(usage, r.usage);
+					durationMs += r.durationMs;
+					const s = readStrip(r.response, repeated.map((c) => c.category), region, locateOpts);
+					found.push(...s.detections);
+					allRejected.push(...s.rejected);
+				}
+				const merged = mergeStripDetections(found, new Map(repeated.map((c) => [c.category.key, c.count])));
+				detections.push(...merged.kept);
+				allRejected.push(...merged.dropped);
+			}
+
+			return { detections, rejected: allRejected, usage, durationMs };
 		},
 
 		async compareIdentity(a: AnalysisImage, b: AnalysisImage, budget: JobBudget, signal?: AbortSignal): Promise<IdentityResult> {
