@@ -7,7 +7,16 @@
       "Bash(npm run test:*)",
       "Bash(git status:*)",
       "Bash(git diff:*)",
-      "Bash(git log:*)"
+      "Bash(git log:*)",
+      "Bash(shasum *)",
+      "Bash(shellcheck *)",
+      "Bash(git rev-list *)",
+      "Bash(git count-objects *)",
+      "Bash(git check-ignore *)",
+      "Bash(git merge-base *)",
+      "Bash(~/.ai-usage/bin/task-report)",
+      "mcp__claude-in-chrome__tabs_context_mcp",
+      "mcp__claude-in-chrome__find"
     ]
   }
 }
