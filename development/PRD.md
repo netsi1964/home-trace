@@ -1,6 +1,6 @@
 # HomeTrace — Product Requirements Document
 
-Version: 1.1 | Date: 19 October 2026 | Product owner: Sten Hougaard
+Version: 1.2 | Date: 19 October 2026 | Product owner: Sten Hougaard
 
 Status: Ready for technical validation and implementation planning. This document specifies a prototype; JEV detection and physical-object identity accuracy have not been measured.
 
@@ -19,15 +19,16 @@ Product promise: **Give your home a visual memory. Register your belongings room
 | Area | Decision |
 | --- | --- |
 | Name | HomeTrace |
-| Language | English UI and PRD; keep UI strings separate for future localization |
-| Platform | Responsive web application designed primarily for phones |
+| Language | English code and documentation; UI strings localized to Danish, English, Spanish, Chinese |
+| Platform | Responsive static SPA web application designed primarily for phones |
+| Deployment | Single-page static site with shareable session URLs via query string |
 | Camera | Live preview; image analysis starts only after an explicit button press |
 | Review | Freeze the captured frame and mark detected objects |
 | Identity | AI proposes existing-object matches; the user resolves uncertainty |
 | Organization | Rooms with multiple named viewpoints |
-| Revisits | Adjustable transparent reference image over live video |
+| Revisits | Adjustable transparent reference image over live video with GPU-accelerated overlay blending |
 | Storage | Inventory and images stored on the device, without an account or login |
-| Portability | Export/import a ZIP containing JSON and image files |
+| Portability | Export/import a ZIP containing JSON and image files; shareable sessions via URL state |
 | Integration | Evaluate and use JEV Images where its measured capabilities support the task |
 
 ### Working assumptions
@@ -184,21 +185,60 @@ Acceptance: Recursive discovery cannot exceed the job budget. Interrupted jobs d
 | Component | Recommendation | Reason |
 | --- | --- | --- |
 | Frontend | SvelteKit and TypeScript | Fits the owner's experience and supports clear component boundaries |
+| Deployment | Static SPA served from CDN or static hosting | Single-page app with shareable session URLs via query string |
 | Local database | IndexedDB through a typed repository, optionally Dexie | Structured data plus binary images |
-| Camera/image layers | getUserMedia, video, canvas, and SVG overlays | Separate clean image capture from annotations |
+| Camera/image layers | getUserMedia, video, canvas, SVG overlays, and WebGL shaders | Separate clean image capture from annotations; GPU-accelerated overlay blending and batch processing |
 | Validation | JSON Schema or Zod plus explicit schema version | Validate imports and adapter output |
 | Archive | ZIP library with size limits and path validation | Portable self-contained export |
 | AI interface | Provider adapter with mock and JEV implementations | Test workflows without inventing provider contracts |
 | API transport | Small private proxy/server route, optionally SvelteKit on Node | Keep provider credentials outside the client bundle |
+| State persistence | Query string and IndexedDB | Resume sessions via shareable URL; preserve local state across reloads |
 | Offline shell | Service worker after the core flow works | Local review after initial load |
 
 These are recommendations. No cloud inventory database, user-account system, or server-side image archive is required.
+
+### Performance and device targeting
+
+- Load time is **nice-to-have** rather than critical; prioritize simplicity and correctness.
+- Target modern browsers and recent phones (iPhone 11+, Android 8+) with 2+ GB RAM.
+- Use WebGL shaders for GPU-accelerated overlay blending and batch image processing where performance matters.
+- Lazy-load heavy components and images; avoid blocking the camera preview on startup.
+
+### Internationalization (i18n) and styling
+
+**UI localization**: Support Danish (`da`), English (`en`, default), Spanish (`es`), and Simplified Chinese (`zh`). Store UI strings outside components using a typed i18n system (e.g. `svelte-i18n`). Keys follow the pattern `screen.action.label`, e.g. `camera.capture.scan`.
+
+**Code and documentation**: All code, comments, error messages, README, and developer documentation remain in English.
+
+**Typography**: Use the following font stack throughout the application as the default:
+```css
+font-family: Avenir, Montserrat, Corbel, 'URW Gothic', source-sans-pro, sans-serif;
+font-weight: normal;
+```
+
+Exceptions: Use monospace fonts (e.g. `Courier New`, `Monaco`) only for technical content such as code snippets, error logs, or input fields where monospace improves clarity. Do not override the base font-weight without justification.
 
 ### Verified JEV information as of 19 October 2026
 
 According to TypeSafe's official release dated 14 October, image input is experimental and enabled with `TypeSafe-Danger-Zone-Images: true`. The `box` type returns a single box and was introduced for `jev-1.14.0`. The announcement does not document a detector that enumerates all items in a scene. [1]
 
 Therefore, evaluate JEV on specific presence, box, and identity questions. Establish from official documentation and actual responses how to discover unknown items, handle repeated instances, and suppress boxes when a target is absent. The official images/box documentation pages could not be opened during research. Exact HTTP payloads, response fields, limits, and prices are intentionally not specified here.
+
+### Shareable session URLs and state persistence
+
+The application uses query string parameters to preserve and share scan sessions:
+
+- `?home=<uuid>&room=<uuid>&viewpoint=<uuid>&mode=register|compare&reference=<scan-uuid>`
+- `?session=<uuid>` for resuming a specific analysis job or scan context
+
+These URLs allow users to:
+1. Share a scan session with collaborators (e.g., "I scanned the living room from the doorway; here's the result").
+2. Resume analysis or review after a browser reload without losing context.
+3. Deep-link into a specific comparison or inventory state.
+
+State is persisted to IndexedDB atomically; the query string supplements but does not replace local storage. Load the app with a query string, retrieve matching data from IndexedDB, and restore the UI state without re-scanning or re-analyzing.
+
+**Critical constraint**: Never encode sensitive data (provider credentials, API keys, or image payloads) in query strings. State parameters reference local database UUIDs only.
 
 ### Phase 0 must establish
 
@@ -335,6 +375,14 @@ Suggested adjustable MVP import limits: 100 MiB compressed archive, 300 MiB expa
 
 ## PRD-SEC-006 — UI design principles and user journeys
 
+### Design system
+
+**Font**: All text uses the base font stack `Avenir, Montserrat, Corbel, 'URW Gothic', source-sans-pro, sans-serif` with `font-weight: normal` by default. Monospace fonts may be used for technical content (logs, error codes, input fields) where clarity is improved.
+
+**Localization**: All UI text is localized to Danish, English (default), Spanish, and Simplified Chinese. Code comments, error logs, and documentation remain in English. Use keys organized by screen and feature, e.g. `camera.capture.scan`, `inventory.search.placeholder`, and load translations from an i18n system outside component logic.
+
+**Color and accessibility**: Never use color alone to communicate status. Pair every color with a label, icon, and number. The initial user is colorblind; ensure sufficient contrast and textual context.
+
 ### Main screens
 
 | Screen | Content and primary action |
@@ -375,19 +423,21 @@ Suggested adjustable MVP import limits: 100 MiB compressed archive, 300 MiB expa
 6) Provide readable opacity percentage, keyboard operation, and an accessible slider label.
 7) Inventory and data management support keyboard and screen-reader use. Every image box has an equivalent text-list entry.
 8) Use **No change detected** consistently. Never claim an object **Has not moved at any time**.
+9) Preserve query string state during navigation to support shareable session URLs and resume functionality.
 
 ## PRD-SEC-007 — Security and privacy
 
 1) No user account in MVP. Household data stays in the browser profile; someone with access to that profile may be able to view it.
 2) Before the first analysis, explain that the snapshot and necessary reference crops are transmitted for AI processing. The live video feed is not transmitted.
 3) Keep provider credentials as server secrets, never in frontend bundles, URLs, logs, or exports.
-4) Restrict the proxy to a private test environment or temporary access control with a server-enforced aggregate budget. An anonymous public client must not have access to an unlimited shared provider budget.
-5) Same-origin and CORS rules alone are not authentication. Document private prototype access during setup.
-6) Do not create a server-side inventory database. Exclude image payloads from application logs, tracing, and crash dumps.
-7) Render names and notes as plain text. Imported files are data, never executable code or instructions.
-8) **Delete home** requires clear confirmation and offers export first. Delete all local metadata and assets belonging to that home.
-9) MVP ZIP exports are unencrypted. Explain this at export because the archive contains private indoor imagery.
-10) Verify the provider's current privacy/retention terms before a public pilot. Do not state an unverified retention guarantee.
+4) **Never encode sensitive data in query strings.** State parameters reference local database UUIDs only; credentials and API keys are server-side only.
+5) Restrict the proxy to a private test environment or temporary access control with a server-enforced aggregate budget. An anonymous public client must not have access to an unlimited shared provider budget.
+6) Same-origin and CORS rules alone are not authentication. Document private prototype access during setup.
+7) Do not create a server-side inventory database. Exclude image payloads from application logs, tracing, and crash dumps.
+8) Render names and notes as plain text. Imported files are data, never executable code or instructions.
+9) **Delete home** requires clear confirmation and offers export first. Delete all local metadata and assets belonging to that home.
+10) MVP ZIP exports are unencrypted. Explain this at export because the archive contains private indoor imagery.
+11) Verify the provider's current privacy/retention terms before a public pilot. Do not state an unverified retention guarantee.
 
 ## PRD-SEC-008 — Development phases and validation
 
@@ -500,17 +550,19 @@ These questions do not block camera, local data, overlay, or archive work. They 
 
 ## Developer handoff
 
-Start with Phase 0. Keep clear module boundaries for camera, overlays, inventory, observations, matching, comparisons, persistence, archive, and providers. Preserve feature IDs in tasks and tests.
+Start with Phase 0. Keep clear module boundaries for camera, overlays, inventory, observations, matching, comparisons, persistence, archive, providers, and i18n. Preserve feature IDs in tasks and tests.
 
 Create a complete fixture-driven demo with two rooms, two living-room viewpoints, one item appearing in both views, two identical cups, one moved item, and one hidden item. Fixtures must include ground truth and be visibly labeled **Demo**. Add the JEV adapter only through the verified provider contract. Do not infer API payloads from unverified third-party examples.
 
-The first review should demonstrate room selection, capture, identity decisions, revisit overlay, comparison, and export/import as one connected flow. Working data relationships matter more than many disconnected screens.
+The first review should demonstrate room selection, capture, identity decisions, revisit overlay, comparison, export/import, and shareable session URLs as one connected flow. Working data relationships and query string state preservation matter more than many disconnected screens.
 
-All UI copy, repository documentation, code comments, and developer instructions must use English. Keep UI strings outside components where practical so later languages can be added without rewriting the flow.
+**All UI strings** must be externalized and translated to Danish, English, Spanish, and Simplified Chinese using a typed i18n system. **All code, comments, documentation, error messages, and developer-facing text** remain in English.
+
+**Typography**: Apply the specified font stack (`Avenir, Montserrat, Corbel, 'URW Gothic', source-sans-pro, sans-serif` with `font-weight: normal`) as the application default. Use monospace fonts only for technical content.
 
 ## Sources and research status
 
-Research date: 19 October 2026. Confirmed product decisions come from the discussion with Sten. Stack, limits, and evaluation targets are recommendations. This revision changes the product name to HomeTrace and the product/documentation language to English while preserving feature IDs and the 24 scenarios.
+Research date: 19 October 2026. Confirmed product decisions come from the discussion with Sten. Stack, limits, and evaluation targets are recommendations. This revision (v1.2) adds WebGL shaders for overlay blending, query string state persistence, i18n support for UI (Danish, English, Spanish, Simplified Chinese), specified typography, and static SPA deployment while preserving all feature IDs and scenarios.
 
 1) TypeSafe AI, **Jev: For the builders AND dreamers**, 14 October 2026: https://typesafe.ai/blog/jev-1-14
 2) MDN, **getUserMedia**: https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia
