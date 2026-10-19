@@ -1,0 +1,28 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Skip until the app exists
+        if: hashFiles('package.json') == ''
+        run: echo "No package.json yet, nothing to test."
+      - uses: actions/setup-node@v4
+        if: hashFiles('package.json') != ''
+        with:
+          node-version: 22
+          cache: npm
+      - if: hashFiles('package.json') != ''
+        run: npm ci
+      - if: hashFiles('package.json') != ''
+        run: npm run check --if-present
+      - if: hashFiles('package.json') != ''
+        run: npm run lint --if-present
+      - if: hashFiles('package.json') != ''
+        run: npm test --if-present

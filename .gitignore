@@ -1,0 +1,24 @@
+.DS_Store
+node_modules/
+*.log
+*.tmp
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Build / test output
+.svelte-kit/
+build/
+dist/
+coverage/
+test-results/
+
+# Private household data: exports and real photos never go in the repo
+*.hometrace.zip
+exports/
+private-fixtures/
+
+# Personal Claude Code settings
+.claude/settings.local.json

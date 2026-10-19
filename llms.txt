@@ -1,0 +1,12 @@
+# home-trace
+
+HomeTrace: a mobile-first web app that gives your home a visual memory. Scan named viewpoints room by room, confirm object identity, revisit with a transparent reference overlay, and export everything as a ZIP. Data stays on the device. Pre-alpha.
+
+## Documentation Index
+- [README](README.md)
+- [AGENTS](AGENTS.md)
+- [memory](memory.md)
+- [PRD](development/PRD.md)
+- [CONTRIBUTING](CONTRIBUTING.md)
+- [SECURITY](SECURITY.md)
+- [CHANGELOG](CHANGELOG.md)
