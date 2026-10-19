@@ -22,3 +22,11 @@ private-fixtures/
 
 # Personal Claude Code settings
 .claude/settings.local.json
+
+# SvelteKit / Vite
+.output
+vite.config.ts.timestamp-*
+!.env.test
+
+# Phase 0 evaluation outputs (may reference private photos)
+eval-results/

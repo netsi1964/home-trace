@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+	<title>HomeTrace</title>
+	<rect width="64" height="64" rx="14" fill="#12343b"/>
+	<g fill="none" stroke="#f4d58d" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+		<path d="M10 22V10h12"/>
+		<path d="M42 10h12v12"/>
+		<path d="M54 42v12H42"/>
+		<path d="M22 54H10V42"/>
+	</g>
+	<path d="M32 17 17 30v17h30V30z" fill="#f7f4ec"/>
+	<rect x="27.5" y="34" width="9" height="13" rx="1.5" fill="#12343b"/>
+</svg>
