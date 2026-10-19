@@ -1,6 +1,6 @@
 # HomeTrace — Product Requirements Document
 
-Version: 1.2 | Date: 19 October 2026 | Product owner: Sten Hougaard
+Version: 1.3 | Date: 19 October 2026 | Product owner: Sten Hougaard
 
 Status: Ready for technical validation and implementation planning. This document specifies a prototype; JEV detection and physical-object identity accuracy have not been measured.
 
@@ -20,15 +20,15 @@ Product promise: **Give your home a visual memory. Register your belongings room
 | --- | --- |
 | Name | HomeTrace |
 | Language | English code and documentation; UI strings localized to Danish, English, Spanish, Chinese |
-| Platform | Responsive static SPA web application designed primarily for phones |
-| Deployment | Single-page static site with shareable session URLs via query string |
+| Platform | Responsive SvelteKit web application designed primarily for phones |
+| Deployment | SvelteKit app on a Node host: client UI plus a small private server route for the provider proxy |
 | Camera | Live preview; image analysis starts only after an explicit button press |
 | Review | Freeze the captured frame and mark detected objects |
 | Identity | AI proposes existing-object matches; the user resolves uncertainty |
 | Organization | Rooms with multiple named viewpoints |
 | Revisits | Adjustable transparent reference image over live video with GPU-accelerated overlay blending |
 | Storage | Inventory and images stored on the device, without an account or login |
-| Portability | Export/import a ZIP containing JSON and image files; shareable sessions via URL state |
+| Portability | Export/import a ZIP containing JSON and image files; same-device deep links via URL state |
 | Integration | Evaluate and use JEV Images where its measured capabilities support the task |
 
 ### Working assumptions
@@ -185,14 +185,14 @@ Acceptance: Recursive discovery cannot exceed the job budget. Interrupted jobs d
 | Component | Recommendation | Reason |
 | --- | --- | --- |
 | Frontend | SvelteKit and TypeScript | Fits the owner's experience and supports clear component boundaries |
-| Deployment | Static SPA served from CDN or static hosting | Single-page app with shareable session URLs via query string |
+| Deployment | SvelteKit with adapter-node | One deployable serving the client app and the private proxy route |
 | Local database | IndexedDB through a typed repository, optionally Dexie | Structured data plus binary images |
 | Camera/image layers | getUserMedia, video, canvas, SVG overlays, and WebGL shaders | Separate clean image capture from annotations; GPU-accelerated overlay blending and batch processing |
 | Validation | JSON Schema or Zod plus explicit schema version | Validate imports and adapter output |
 | Archive | ZIP library with size limits and path validation | Portable self-contained export |
 | AI interface | Provider adapter with mock and JEV implementations | Test workflows without inventing provider contracts |
 | API transport | Small private proxy/server route, optionally SvelteKit on Node | Keep provider credentials outside the client bundle |
-| State persistence | Query string and IndexedDB | Resume sessions via shareable URL; preserve local state across reloads |
+| State persistence | Query string and IndexedDB | Resume sessions and deep-link on the same device; preserve local state across reloads |
 | Offline shell | Service worker after the core flow works | Local review after initial load |
 
 These are recommendations. No cloud inventory database, user-account system, or server-side image archive is required.
@@ -224,7 +224,7 @@ According to TypeSafe's official release dated 14 October, image input is experi
 
 Therefore, evaluate JEV on specific presence, box, and identity questions. Establish from official documentation and actual responses how to discover unknown items, handle repeated instances, and suppress boxes when a target is absent. The official images/box documentation pages could not be opened during research. Exact HTTP payloads, response fields, limits, and prices are intentionally not specified here.
 
-### Shareable session URLs and state persistence
+### Session URLs and state persistence
 
 The application uses query string parameters to preserve and share scan sessions:
 
@@ -232,9 +232,11 @@ The application uses query string parameters to preserve and share scan sessions
 - `?session=<uuid>` for resuming a specific analysis job or scan context
 
 These URLs allow users to:
-1. Share a scan session with collaborators (e.g., "I scanned the living room from the doorway; here's the result").
-2. Resume analysis or review after a browser reload without losing context.
-3. Deep-link into a specific comparison or inventory state.
+1. Resume analysis or review after a browser reload without losing context.
+2. Deep-link into a specific comparison or inventory state on the same device.
+3. Bookmark a viewpoint for a quick revisit.
+
+Data lives only on the device, so a URL is a reference, not a copy. Opened on another device or in an empty database, the app shows **This session is not on this device** and offers ZIP import. Sharing data with another person means sharing an export.
 
 State is persisted to IndexedDB atomically; the query string supplements but does not replace local storage. Load the app with a query string, retrieve matching data from IndexedDB, and restore the UI state without re-scanning or re-analyzing.
 
@@ -423,7 +425,7 @@ Suggested adjustable MVP import limits: 100 MiB compressed archive, 300 MiB expa
 6) Provide readable opacity percentage, keyboard operation, and an accessible slider label.
 7) Inventory and data management support keyboard and screen-reader use. Every image box has an equivalent text-list entry.
 8) Use **No change detected** consistently. Never claim an object **Has not moved at any time**.
-9) Preserve query string state during navigation to support shareable session URLs and resume functionality.
+9) Preserve query string state during navigation to support same-device deep links and resume functionality.
 
 ## PRD-SEC-007 — Security and privacy
 
@@ -554,7 +556,7 @@ Start with Phase 0. Keep clear module boundaries for camera, overlays, inventory
 
 Create a complete fixture-driven demo with two rooms, two living-room viewpoints, one item appearing in both views, two identical cups, one moved item, and one hidden item. Fixtures must include ground truth and be visibly labeled **Demo**. Add the JEV adapter only through the verified provider contract. Do not infer API payloads from unverified third-party examples.
 
-The first review should demonstrate room selection, capture, identity decisions, revisit overlay, comparison, export/import, and shareable session URLs as one connected flow. Working data relationships and query string state preservation matter more than many disconnected screens.
+The first review should demonstrate room selection, capture, identity decisions, revisit overlay, comparison, export/import, and same-device session URLs as one connected flow. Working data relationships and query string state preservation matter more than many disconnected screens.
 
 **All UI strings** must be externalized and translated to Danish, English, Spanish, and Simplified Chinese using a typed i18n system. **All code, comments, documentation, error messages, and developer-facing text** remain in English.
 
@@ -562,7 +564,7 @@ The first review should demonstrate room selection, capture, identity decisions,
 
 ## Sources and research status
 
-Research date: 19 October 2026. Confirmed product decisions come from the discussion with Sten. Stack, limits, and evaluation targets are recommendations. This revision (v1.2) adds WebGL shaders for overlay blending, query string state persistence, i18n support for UI (Danish, English, Spanish, Simplified Chinese), specified typography, and static SPA deployment while preserving all feature IDs and scenarios.
+Research date: 19 October 2026. Confirmed product decisions come from the discussion with Sten. Stack, limits, and evaluation targets are recommendations. This revision (v1.3) replaces static SPA deployment with SvelteKit on Node (the provider proxy needs a server route) and scopes session URLs to the same device. v1.2 added WebGL shaders for overlay blending, query string state persistence, i18n support for UI (Danish, English, Spanish, Simplified Chinese), and specified typography while preserving all feature IDs and scenarios.
 
 1) TypeSafe AI, **Jev: For the builders AND dreamers**, 14 October 2026: https://typesafe.ai/blog/jev-1-14
 2) MDN, **getUserMedia**: https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia

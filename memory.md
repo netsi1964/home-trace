@@ -20,4 +20,4 @@ every session. Put rules in `AGENTS.md` and requirements in `development/PRD.md`
 ## Open questions
 
 See "Decisions after the first technical evaluation" in `development/PRD.md` (PRD-SEC-009).
-Stack (SvelteKit) is a recommendation, not yet confirmed.
+Stack: SvelteKit + TypeScript on adapter-node, confirmed 2026-10-19 (not a static SPA; the proxy needs a server route).
