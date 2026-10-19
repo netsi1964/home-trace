@@ -1,7 +1,10 @@
 {
 	"extends": "$app/tsconfig",
 	"compilerOptions": {
-		"strict": true
+		"strict": true,
+		// Scripts run with Node type stripping: no enums, namespaces or parameter properties.
+		"erasableSyntaxOnly": true,
+		"types": ["$app/types", "node"]
 	},
 	"include": ["src", "scripts", "vite.config.ts"]
 }

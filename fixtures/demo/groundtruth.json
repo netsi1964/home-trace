@@ -1,0 +1,358 @@
+{
+	"schemaVersion": "1.0.0",
+	"kind": "hometrace-phase0-ground-truth",
+	"demo": true,
+	"description": "Synthetic Demo drawings for pipeline and contract checks. Not photos; results on them say nothing about real-home quality.",
+	"images": [
+		{
+			"id": "living-doorway-1",
+			"file": "living-doorway-1.png",
+			"width": 1200,
+			"height": 900,
+			"room": "Living room",
+			"viewpoint": "From the doorway",
+			"conditions": [
+				"normal"
+			],
+			"objects": [
+				{
+					"objectKey": "lamp-1",
+					"label": "lamp",
+					"aliases": [],
+					"category": "lamp",
+					"box": {
+						"x": 0.075,
+						"y": 0.2889,
+						"width": 0.1333,
+						"height": 0.4667
+					},
+					"visibility": "clear"
+				},
+				{
+					"objectKey": "table-1",
+					"label": "table",
+					"aliases": [],
+					"category": "table",
+					"box": {
+						"x": 0.35,
+						"y": 0.5778,
+						"width": 0.35,
+						"height": 0.2
+					},
+					"visibility": "clear"
+				},
+				{
+					"objectKey": "cup-1",
+					"label": "cup",
+					"aliases": [
+						"mug"
+					],
+					"category": "cup",
+					"box": {
+						"x": 0.4167,
+						"y": 0.4889,
+						"width": 0.0583,
+						"height": 0.0889
+					},
+					"visibility": "clear"
+				},
+				{
+					"objectKey": "cup-2",
+					"label": "cup",
+					"aliases": [
+						"mug"
+					],
+					"category": "cup",
+					"box": {
+						"x": 0.5667,
+						"y": 0.4889,
+						"width": 0.0583,
+						"height": 0.0889
+					},
+					"visibility": "clear"
+				},
+				{
+					"objectKey": "chair-1",
+					"label": "chair",
+					"aliases": [],
+					"category": "chair",
+					"box": {
+						"x": 0.75,
+						"y": 0.4667,
+						"width": 0.1667,
+						"height": 0.3556
+					},
+					"visibility": "clear"
+				},
+				{
+					"objectKey": "picture-1",
+					"label": "picture",
+					"aliases": [
+						"frame",
+						"painting",
+						"photo"
+					],
+					"category": "picture",
+					"box": {
+						"x": 0.4,
+						"y": 0.1333,
+						"width": 0.2,
+						"height": 0.1889
+					},
+					"visibility": "clear"
+				}
+			],
+			"emptyRegions": [
+				{
+					"x": 0.2167,
+					"y": 0.0889,
+					"width": 0.15,
+					"height": 0.1556
+				}
+			]
+		},
+		{
+			"id": "living-sofa-1",
+			"file": "living-sofa-1.png",
+			"width": 1200,
+			"height": 900,
+			"room": "Living room",
+			"viewpoint": "Bookshelf from the sofa",
+			"conditions": [
+				"normal"
+			],
+			"objects": [
+				{
+					"objectKey": "lamp-1",
+					"label": "lamp",
+					"aliases": [],
+					"category": "lamp",
+					"box": {
+						"x": 0.6833,
+						"y": 0.2667,
+						"width": 0.1417,
+						"height": 0.4889
+					},
+					"visibility": "clear"
+				},
+				{
+					"objectKey": "plant-1",
+					"label": "plant",
+					"aliases": [
+						"potted plant"
+					],
+					"category": "plant",
+					"box": {
+						"x": 0.1167,
+						"y": 0.4222,
+						"width": 0.1833,
+						"height": 0.3778
+					},
+					"visibility": "clear"
+				},
+				{
+					"objectKey": "book-1",
+					"label": "book",
+					"aliases": [],
+					"category": "book",
+					"box": {
+						"x": 0.375,
+						"y": 0.3333,
+						"width": 0.05,
+						"height": 0.2222
+					},
+					"visibility": "clear"
+				},
+				{
+					"objectKey": "clock-1",
+					"label": "clock",
+					"aliases": [],
+					"category": "clock",
+					"box": {
+						"x": 0.4333,
+						"y": 0.0889,
+						"width": 0.1333,
+						"height": 0.1778
+					},
+					"visibility": "clear"
+				}
+			],
+			"emptyRegions": [
+				{
+					"x": 0.8417,
+					"y": 0.0889,
+					"width": 0.1333,
+					"height": 0.1778
+				}
+			]
+		},
+		{
+			"id": "kitchen-counter-1",
+			"file": "kitchen-counter-1.png",
+			"width": 1200,
+			"height": 900,
+			"room": "Kitchen",
+			"viewpoint": "Counter by the window",
+			"conditions": [
+				"normal"
+			],
+			"objects": [
+				{
+					"objectKey": "bottle-1",
+					"label": "bottle",
+					"aliases": [],
+					"category": "bottle",
+					"box": {
+						"x": 0.1667,
+						"y": 0.3667,
+						"width": 0.075,
+						"height": 0.2889
+					},
+					"visibility": "clear"
+				},
+				{
+					"objectKey": "cup-3",
+					"label": "cup",
+					"aliases": [
+						"mug"
+					],
+					"category": "cup",
+					"box": {
+						"x": 0.35,
+						"y": 0.5333,
+						"width": 0.0667,
+						"height": 0.1
+					},
+					"visibility": "clear"
+				},
+				{
+					"objectKey": "clock-2",
+					"label": "clock",
+					"aliases": [],
+					"category": "clock",
+					"box": {
+						"x": 0.6833,
+						"y": 0.1,
+						"width": 0.1417,
+						"height": 0.1889
+					},
+					"visibility": "clear"
+				}
+			],
+			"emptyRegions": []
+		},
+		{
+			"id": "living-doorway-2",
+			"file": "living-doorway-2.png",
+			"width": 1200,
+			"height": 900,
+			"room": "Living room",
+			"viewpoint": "From the doorway",
+			"conditions": [
+				"normal"
+			],
+			"objects": [
+				{
+					"objectKey": "lamp-1",
+					"label": "lamp",
+					"aliases": [],
+					"category": "lamp",
+					"box": {
+						"x": 0.0792,
+						"y": 0.2911,
+						"width": 0.1333,
+						"height": 0.4667
+					},
+					"visibility": "clear"
+				},
+				{
+					"objectKey": "table-1",
+					"label": "table",
+					"aliases": [],
+					"category": "table",
+					"box": {
+						"x": 0.35,
+						"y": 0.5778,
+						"width": 0.35,
+						"height": 0.2
+					},
+					"visibility": "clear"
+				},
+				{
+					"objectKey": "cup-1",
+					"label": "cup",
+					"aliases": [
+						"mug"
+					],
+					"category": "cup",
+					"box": {
+						"x": 0.4167,
+						"y": 0.4889,
+						"width": 0.0583,
+						"height": 0.0889
+					},
+					"visibility": "clear"
+				},
+				{
+					"objectKey": "book-2",
+					"label": "book",
+					"aliases": [],
+					"category": "book",
+					"box": {
+						"x": 0.55,
+						"y": 0.4,
+						"width": 0.05,
+						"height": 0.1833
+					},
+					"visibility": "clear"
+				},
+				{
+					"objectKey": "cup-2",
+					"label": "cup",
+					"aliases": [
+						"mug"
+					],
+					"category": "cup",
+					"box": {
+						"x": 0.575,
+						"y": 0.4889,
+						"width": 0.0583,
+						"height": 0.0889
+					},
+					"visibility": "partial"
+				},
+				{
+					"objectKey": "chair-1",
+					"label": "chair",
+					"aliases": [],
+					"category": "chair",
+					"box": {
+						"x": 0.2167,
+						"y": 0.4778,
+						"width": 0.1667,
+						"height": 0.3556
+					},
+					"visibility": "clear"
+				},
+				{
+					"objectKey": "picture-1",
+					"label": "picture",
+					"aliases": [
+						"frame",
+						"painting",
+						"photo"
+					],
+					"category": "picture",
+					"box": {
+						"x": 0.4,
+						"y": 0.1333,
+						"width": 0.2,
+						"height": 0.1889
+					},
+					"visibility": "clear"
+				}
+			],
+			"emptyRegions": []
+		}
+	]
+}
