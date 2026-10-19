@@ -8,7 +8,7 @@ HomeTrace: a mobile-first web app that gives a home a visual memory. The user sc
 room, confirms object identity (**Same object? Yes / No / Skip**), revisits viewpoints with a transparent
 reference overlay, and exports everything as a portable ZIP. Data stays on the device.
 
-**Status:** pre-alpha. The PRD exists, the code does not yet.
+**Status:** pre-alpha, Phase 0. JEV contract verified (`docs/jev-contract.md`), evaluation harness and annotation tool built. No app flow yet.
 
 ## Source of truth
 
@@ -19,9 +19,9 @@ reference overlay, and exports everything as a portable ZIP. Data stays on the d
 - Do not build outside the PRD scope. Follow the phase order: Phase 0 (validate JEV) before Phase 2 (integrate it).
 - If the PRD is wrong or unclear, change the PRD in the same PR instead of silently diverging.
 
-## Stack (recommended in PRD-SEC-004, not yet confirmed)
+## Stack
 
-- SvelteKit + TypeScript, mobile-first.
+- SvelteKit 3 + TypeScript on adapter-node (confirmed 2026-10-19), Svelte 5 runes, mobile-first. Node ≥ 22.17.
 - IndexedDB through a typed repository (Dexie optional).
 - getUserMedia, video, canvas and SVG overlays.
 - JSON Schema or Zod with an explicit schema version.
@@ -33,6 +33,8 @@ reference overlay, and exports everything as a portable ZIP. Data stays on the d
 | Path | Purpose |
 |---|---|
 | `development/` | PRD and other planning documents |
+| `src/lib/geometry/` | Normalised boxes, validation, IoU |
+| `src/lib/evaluation/` | Phase 0 ground truth, metrics, annotation draft |
 | `src/lib/camera/` | Camera, clean frame capture, reference overlay |
 | `src/lib/inventory/` | Rooms, viewpoints, objects, observations |
 | `src/lib/matching/` | Identity proposals and user decisions |
@@ -42,19 +44,24 @@ reference overlay, and exports everything as a portable ZIP. Data stays on the d
 | `src/lib/providers/` | Provider adapters (`mock`, `jev`). Only place that knows a provider |
 | `src/lib/i18n/` | UI strings, kept outside components |
 | `src/routes/` | Screens and the private proxy route |
+| `scripts/` | Node-only tools: `eval.ts`, demo fixture renderer. Run with Node type stripping |
 | `fixtures/` | Demo images with ground truth, always labelled **Demo** |
+| `private-fixtures/`, `eval-results/` | Real photos and their reports. Git-ignored, never committed |
 | `docs/` | User and contributor documentation |
 
 ## Commands
 
-Not set up yet. Once the SvelteKit project exists, use:
-
 ```
+nvm use         # Node 24
 npm run dev     # local dev server
 npm run check   # type check
-npm run lint    # lint
-npm test        # unit tests
+npm run lint    # svelte-check, warnings fail
+npm test        # unit tests (vitest)
+npm run eval    # Phase 0 evaluation, see docs/phase0.md. JEV runs need --confirm-paid
 ```
+
+TypeScript uses `erasableSyntaxOnly` and explicit `.ts` import extensions so `scripts/` run directly in Node.
+Server-only provider code lives in `*.server.ts` so SvelteKit keeps it out of the client bundle.
 
 ## Design rules
 

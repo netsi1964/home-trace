@@ -3,8 +3,8 @@
 **A visual memory for your home.** Register your belongings room by room, then see what you find again
 and what looks different.
 
-> **Status: pre-alpha.** The PRD is written; the implementation has not started.
-> Read [`development/PRD.md`](development/PRD.md).
+> **Status: pre-alpha, Phase 0.** The JEV contract is verified and an evaluation harness exists.
+> No user-facing app flow yet. Read [`development/PRD.md`](development/PRD.md) and [`docs/phase0.md`](docs/phase0.md).
 
 ## What it is
 
@@ -36,6 +36,24 @@ It does not claim complete inventory, 3D positioning or that a hidden item has d
 1. Complete workflow prototype with clearly labelled demo detections.
 2. JEV integration, private proxy, budgets and comparisons.
 3. Stabilisation: recovery, accessibility, offline shell.
+
+## Development
+
+Requires Node ≥ 22.17 (`.nvmrc` pins 24).
+
+```sh
+nvm use
+npm install
+npm run dev            # local dev server; annotation tool at /phase0/annotate
+npm run check          # type check
+npm run lint           # svelte-check, warnings fail
+npm test               # unit tests
+npm run fixtures:demo  # re-render the synthetic Demo fixtures
+npm run eval           # Demo provider on Demo fixtures; see docs/phase0.md
+```
+
+Provider access: put `OPEN_ROUTER_API_KEY=...` in `.env` (git-ignored). The verified JEV contract
+and measured Demo results are in [`docs/jev-contract.md`](docs/jev-contract.md).
 
 ## Getting started (coding agents)
 

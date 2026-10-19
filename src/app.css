@@ -1,0 +1,143 @@
+:root {
+	--font: Avenir, Montserrat, Corbel, 'URW Gothic', source-sans-pro, sans-serif;
+	--font-mono: Monaco, 'Courier New', monospace;
+
+	--bg: #f7f4ec;
+	--surface: #ffffff;
+	--ink: #1b1d1f;
+	--ink-muted: #545a60;
+	--line: #cfc8b8;
+	--brand: #12343b;
+	--brand-ink: #ffffff;
+	--accent: #f4d58d;
+	--focus: #1f6feb;
+	--danger: #9b1c1c;
+	--box: #12343b;
+	--box-selected: #b4004e;
+	--empty: #5b4b00;
+
+	--radius: 10px;
+	--tap: 44px;
+	--gutter: 16px;
+
+	color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--bg: #111517;
+		--surface: #1a2023;
+		--ink: #eef1f2;
+		--ink-muted: #a8b0b5;
+		--line: #364046;
+		--brand: #f4d58d;
+		--brand-ink: #12343b;
+		--focus: #79b8ff;
+		--danger: #ff8a8a;
+		--box: #f4d58d;
+		--box-selected: #ff7ab6;
+		--empty: #e8e2a0;
+	}
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+html {
+	-webkit-text-size-adjust: 100%;
+}
+
+body {
+	margin: 0;
+	background: var(--bg);
+	color: var(--ink);
+	font-family: var(--font);
+	font-weight: normal;
+	line-height: 1.5;
+}
+
+h1,
+h2,
+h3 {
+	line-height: 1.2;
+	font-weight: normal;
+}
+
+a {
+	color: inherit;
+}
+
+button,
+input,
+select,
+textarea {
+	font: inherit;
+	color: inherit;
+}
+
+button,
+.button {
+	min-height: var(--tap);
+	min-width: var(--tap);
+	padding: 0 16px;
+	border: 1px solid var(--line);
+	border-radius: var(--radius);
+	background: var(--surface);
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	text-decoration: none;
+}
+
+button.primary,
+.button.primary {
+	background: var(--brand);
+	border-color: var(--brand);
+	color: var(--brand-ink);
+}
+
+button.danger {
+	color: var(--danger);
+	border-color: currentColor;
+}
+
+button:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+input[type='text'],
+input[type='number'],
+select,
+textarea {
+	min-height: var(--tap);
+	width: 100%;
+	padding: 8px 12px;
+	border: 1px solid var(--line);
+	border-radius: var(--radius);
+	background: var(--surface);
+}
+
+:focus-visible {
+	outline: 3px solid var(--focus);
+	outline-offset: 2px;
+}
+
+.visually-hidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+
+code,
+pre {
+	font-family: var(--font-mono);
+}

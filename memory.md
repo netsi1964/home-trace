@@ -14,8 +14,12 @@ every session. Put rules in `AGENTS.md` and requirements in `development/PRD.md`
 
 ## Where we stopped
 
-- 2026-10-19: PRD v1.1 imported and repo scaffolded. No implementation yet.
-- Next: Phase 0 (JEV contract, fixtures with ground truth, evaluation gate).
+- 2026-10-19: PRD v1.3. SvelteKit scaffold, JEV contract verified via OpenRouter (`typesafe/jev-1.14`),
+  Phase 0 harness (`npm run eval`), annotation tool (`/phase0/annotate`), synthetic Demo fixtures.
+- Demo findings: JEV has no multi-box answer; count-then-locate plus per-strip locating for repeats works
+  on drawings; identity judged 3 of 5 lookalike pairs "same". See `docs/jev-contract.md`.
+- Next: Sten takes ≥ 12 real photos, annotates, runs the live eval (`docs/phase0.md`). Then decide
+  PRD-SEC-009 question 1 (JEV alone or extra detector) before Phase 1.
 
 ## Open questions
 

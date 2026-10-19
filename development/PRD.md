@@ -224,6 +224,8 @@ According to TypeSafe's official release dated 14 October, image input is experi
 
 Therefore, evaluate JEV on specific presence, box, and identity questions. Establish from official documentation and actual responses how to discover unknown items, handle repeated instances, and suppress boxes when a target is absent. The official images/box documentation pages could not be opened during research. Exact HTTP payloads, response fields, limits, and prices are intentionally not specified here.
 
+Update 19 October 2026: the official Box and Images pages and the OpenRouter Jev guide have since been read, and live requests confirmed the contract. JEV is reachable as `typesafe/jev-1.14` through the OpenRouter Decisions API. A Box answer is always exactly one box, with no "not found" answer. There is no list-of-boxes type. The verified contract, limits, prices and first Demo measurements are kept in `docs/jev-contract.md`, which is the source for the adapter.
+
 ### Session URLs and state persistence
 
 The application uses query string parameters to preserve and share scan sessions:

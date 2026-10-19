@@ -10,3 +10,5 @@ HomeTrace: a mobile-first web app that gives your home a visual memory. Scan nam
 - [CONTRIBUTING](CONTRIBUTING.md)
 - [SECURITY](SECURITY.md)
 - [CHANGELOG](CHANGELOG.md)
+- [JEV contract](docs/jev-contract.md)
+- [Phase 0 guide](docs/phase0.md)
