@@ -39,6 +39,14 @@ export async function closeDb(): Promise<void> {
 	dbPromise = null;
 }
 
+/**
+ * Records may come from reactive UI state (proxies), which IndexedDB cannot clone. All records
+ * are plain JSON by schema, so a JSON round trip gives an exact, cloneable copy.
+ */
+function plain<T>(x: T): T {
+	return JSON.parse(JSON.stringify(x));
+}
+
 function isQuotaError(e: unknown): boolean {
 	return e instanceof DOMException && (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED');
 }
@@ -74,13 +82,13 @@ export async function commit(m: Mutation, blobs: { id: string; blob: Blob }[] = 
 	await guard(async () => {
 		const d = await db();
 		const tx = d.transaction([...touched], 'readwrite');
-		if (m.home) tx.objectStore('meta').put(m.home, 'home');
+		if (m.home) tx.objectStore('meta').put(plain(m.home), 'home');
 		for (const b of blobs) tx.objectStore('blobs').put(b.blob, b.id);
 		for (const c of COLLECTIONS) {
 			if (!touched.has(c)) continue;
 			const store = tx.objectStore(c);
 			for (const id of m.remove?.[c] ?? []) store.delete(id);
-			for (const x of (m.put?.[c] ?? []) as object[]) store.put(x);
+			for (const x of (m.put?.[c] ?? []) as object[]) store.put(plain(x));
 		}
 		await tx.done;
 	});
@@ -99,9 +107,9 @@ export async function replaceHome(data: HomeData, blobs: Map<string, Blob>): Pro
 		const d = await db();
 		const tx = d.transaction([...STORES], 'readwrite');
 		for (const s of STORES) tx.objectStore(s).clear();
-		tx.objectStore('meta').put(data.home, 'home');
+		tx.objectStore('meta').put(plain(data.home), 'home');
 		for (const [id, blob] of blobs) tx.objectStore('blobs').put(blob, id);
-		for (const c of COLLECTIONS) for (const x of data[c] as object[]) tx.objectStore(c as Collection).put(x);
+		for (const c of COLLECTIONS) for (const x of data[c] as object[]) tx.objectStore(c as Collection).put(plain(x));
 		await tx.done;
 	});
 }

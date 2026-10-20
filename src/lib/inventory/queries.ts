@@ -80,6 +80,9 @@ export function scansOfViewpoint(d: HomeData, viewpointId: string): Scan[] {
 	return d.scans.filter((s) => s.viewpointId === viewpointId).sort((a, b) => b.capturedAt.localeCompare(a.capturedAt));
 }
 
+/** Stable reading order (left to right, then top to bottom), so box numbers never change between visits. */
 export function observationsOfScan(d: HomeData, scanId: string): Observation[] {
-	return d.observations.filter((o) => o.scanId === scanId);
+	return d.observations
+		.filter((o) => o.scanId === scanId)
+		.sort((a, b) => a.box.x - b.box.x || a.box.y - b.box.y || a.id.localeCompare(b.id));
 }

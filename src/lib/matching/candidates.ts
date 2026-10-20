@@ -34,8 +34,8 @@ export function candidatesFor(d: HomeData, observationId: string, opts: { limit?
 			const nameMatch = similar(o.label, obj.name) || (!!obj.category && similar(o.label, obj.category));
 			return { object: obj, sameRoom, nameMatch, score: (sameRoom ? 2 : 0) + (nameMatch ? 3 : 0) };
 		})
-		.filter((c) => (opts.otherRooms ? true : c.sameRoom || c.nameMatch))
-		.filter((c) => c.score > 0 || opts.otherRooms)
+		// By default only similar names are proposed (same room first); `otherRooms` lists every item.
+		.filter((c) => opts.otherRooms || c.nameMatch)
 		.sort((a, b) => b.score - a.score || a.object.name.localeCompare(b.object.name));
 
 	return scored.slice(0, limit).map(({ object, sameRoom, nameMatch }) => ({ object, sameRoom, nameMatch }));

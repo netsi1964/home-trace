@@ -51,7 +51,7 @@ export function snapshotFor(data: HomeData, m: Mutation): UndoSnapshot {
 		const touched = [...((m.put?.[c] ?? []) as { id: string }[]).map((x) => x.id), ...(m.remove?.[c] ?? [])];
 		for (const id of touched) {
 			const old = current.get(id);
-			if (old) ((before as Record<string, unknown[]>)[c] ??= []).push(structuredClone(old));
+			if (old) ((before as Record<string, unknown[]>)[c] ??= []).push(JSON.parse(JSON.stringify(old))); // records are plain JSON; UI state may be a proxy
 			else (created[c] ??= []).push(id);
 		}
 	}
