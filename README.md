@@ -5,8 +5,12 @@ and what looks different.
 
 **Feature tour:** https://netsi1964.github.io/home-trace/
 
-> **Status: pre-alpha, Phase 0.** The JEV contract is verified and an evaluation harness exists.
-> No user-facing app flow yet. Read [`development/PRD.md`](development/PRD.md) and [`docs/phase0.md`](docs/phase0.md).
+> **Status: prototype.** The full flow works: rooms, viewpoints, camera, Same object? Yes / No / Skip,
+> inventory, overlay revisits, comparisons and ZIP export/import. It works in Demo or manual mode and with
+> live AI through a private proxy. Real-device testing and the real-photo evaluation are still to do.
+>
+> **App:** https://home-trace.netlify.app · **Setup:** [`docs/setup.md`](docs/setup.md) · **PRD:**
+> [`development/PRD.md`](development/PRD.md)
 
 ## What it is
 

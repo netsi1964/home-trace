@@ -520,6 +520,22 @@ Estimate delivery time after Phase 0. A short hackathon can demonstrate the work
 5) Keep secrets out of client code and exports; enforce the private analysis budget on the server.
 6) Document setup, fixtures, provider limits, measured latency, and known issues in README.
 
+### Implementation status (20 October 2026)
+
+| Definition of done | Status |
+| --- | --- |
+| 1. Validate PRD-FEAT-001 to 010 | Built. Unit tests cover T02–T05, T07–T15, T17–T19, T21–T24. The Demo flow, live AI and export/import were checked in a desktop browser. Camera preview and overlay were not tested on a phone. |
+| 2. Measured automatic-detection quality | Only on 4 synthetic Demo drawings (`docs/jev-contract.md`, `docs/vision-contract.md`). The real-photo gate (≥ 12 photos) is pending. |
+| 3. Camera, overlay and recovery on iPhone and Android | Pending: needs real devices (`docs/setup.md`). |
+| 4. Export/import with IDs and image hashes in a clean database | Done: unit round trip plus a browser round trip with 17 real images. |
+| 5. Secrets out of client code and exports; private budget enforced on the server | Done: invite code, signed cookie, per-job and daily limits. No provider references in the client bundle. |
+| 6. README: setup, fixtures, provider limits, latency, known issues | Done (`docs/setup.md`, `docs/phase0.md`). Latency is measured on Demo drawings only. |
+
+Known limits:
+- The vision model takes 8–21 s per photo on Demo drawings.
+- Identity proposals cannot tell lookalikes apart; every match is decided by the user.
+- The daily budget can be exceeded by a few requests under concurrency.
+
 ## PRD-SEC-009 — Challenges and mitigations
 
 | Challenge | Mitigation |

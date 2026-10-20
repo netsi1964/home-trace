@@ -251,13 +251,14 @@ footer.note { text-align: center; color: var(--muted); font-size: .8rem; margin-
 <section class="slide" data-title="A visual memory for your home" id="s-title">
   <div class="hero">
     <div>
-      <span class="pill">Pre-alpha · Phase 0 · Open source · Apache-2.0</span>
+      <span class="pill">Prototype · Open source · Apache-2.0</span>
       <h1>Give your home a <em>visual memory</em>.</h1>
       <p class="lead">Register your belongings room by room with your phone's camera. Later, hold up a faint copy of
         the old photo, line it up, and see what you find again, what looks moved and what you could not spot.
         No account. Your photos stay on your device.</p>
       <div class="ctas">
-        <a class="btn primary" href="#/how">How it works →</a>
+        <a class="btn primary" href="https://home-trace.netlify.app">Open the app →</a>
+        <a class="btn" href="#/how">How it works</a>
         <a class="btn" href="#/phase0">What AI can really do</a>
       </div>
     </div>
@@ -337,7 +338,7 @@ footer.note { text-align: center; color: var(--muted); font-size: .8rem; margin-
 
 <!-- 3 · How it works -->
 <section class="slide" data-title="How it works" id="how">
-  <span class="kicker">The journey <span class="status planned">Planned app flow</span></span>
+  <span class="kicker">The journey <span class="status built">Built</span></span>
   <h2>Scan, decide, revisit, compare.</h2>
   <p class="lead">One button press is one bounded job. The live camera preview never triggers analysis, and the frame
     sent for analysis never contains the overlay or any boxes.</p>
@@ -368,7 +369,7 @@ footer.note { text-align: center; color: var(--muted); font-size: .8rem; margin-
 
 <!-- 4 · Rooms and viewpoints -->
 <section class="slide" data-title="Rooms & viewpoints" id="rooms">
-  <span class="kicker">Organisation <span class="status planned">Planned</span></span>
+  <span class="kicker">Organisation <span class="status built">Built</span></span>
   <h2>Rooms, and named places to stand.</h2>
   <p class="lead">A room has several viewpoints, like <b>From the doorway</b> or <b>Bookshelf from the sofa</b>. Each
     viewpoint keeps its scan history and one reference scan you choose yourself.</p>
@@ -396,7 +397,7 @@ footer.note { text-align: center; color: var(--muted); font-size: .8rem; margin-
 
 <!-- 5 · Same object -->
 <section class="slide" data-title="Same object? Yes / No / Skip" id="same">
-  <span class="kicker">Identity <span class="status planned">Planned</span></span>
+  <span class="kicker">Identity <span class="status built">Built</span></span>
   <h2>The one question that matters.</h2>
   <p class="lead">AI is good at "this looks like a cup". It is bad at "this is <em>your</em> cup and not the identical one
     next to it". So HomeTrace asks you, one item at a time.</p>
@@ -432,7 +433,7 @@ footer.note { text-align: center; color: var(--muted); font-size: .8rem; margin-
 
 <!-- 6 · Overlay -->
 <section class="slide" data-title="Revisit with an overlay" id="overlay">
-  <span class="kicker">Revisits <span class="status planned">Planned</span></span>
+  <span class="kicker">Revisits <span class="status built">Built</span> <span class="status planned">Phone test pending</span></span>
   <h2>Stand where you stood last time.</h2>
   <p class="lead">The reference photo lies over the live camera at adjustable opacity. Line up door frames and walls,
     then tap <b>Ready — scan</b>. The overlay is never part of the captured frame.</p>
@@ -465,7 +466,7 @@ footer.note { text-align: center; color: var(--muted); font-size: .8rem; margin-
 
 <!-- 7 · Statuses -->
 <section class="slide" data-title="Comparison statuses" id="statuses">
-  <span class="kicker">Compare <span class="status planned">Planned</span></span>
+  <span class="kicker">Compare <span class="status built">Built</span></span>
   <h2>Careful words for what changed.</h2>
   <p class="lead">Identity, visibility and movement are separate. A cup hidden behind a book is <em>not rediscovered</em>,
     not gone. A box that moved in the photo is not proof that the chair moved.</p>
@@ -488,7 +489,7 @@ footer.note { text-align: center; color: var(--muted); font-size: .8rem; margin-
 
 <!-- 8 · Data -->
 <section class="slide" data-title="Your data stays yours" id="data">
-  <span class="kicker">Privacy &amp; portability <span class="status planned">Planned</span></span>
+  <span class="kicker">Privacy &amp; portability <span class="status built">Built</span></span>
   <h2>No account. No cloud inventory.</h2>
   <p class="lead">Inventory, photos and decisions live in your browser. A ZIP export with open, versioned JSON and image
     files is your backup and your way out.</p>
@@ -572,11 +573,12 @@ footer.note { text-align: center; color: var(--muted); font-size: .8rem; margin-
 <section class="slide" data-title="Roadmap" id="roadmap">
   <span class="kicker">Where we are</span>
   <h2>Four phases, honest about each.</h2>
+  <p class="lead">Try it now in Demo mode at <a href="https://home-trace.netlify.app">home-trace.netlify.app</a>. Live AI needs an invite code.</p>
   <div class="phases">
-    <div class="card phase now"><h3>Phase 0 <span class="status built">Now</span></h3><p>Verify provider contracts, annotate real photos, measure discovery and identity against the gate.</p></div>
-    <div class="card phase"><h3>Phase 1 <span class="status planned">Next</span></h3><p>The full journey with clearly labelled Demo detections: rooms, camera, Same object?, inventory, ZIP.</p></div>
-    <div class="card phase"><h3>Phase 2 <span class="status planned">Later</span></h3><p>Live AI behind a private proxy with enforced budgets, overlay revisits and comparison statuses.</p></div>
-    <div class="card phase"><h3>Phase 3 <span class="status planned">Later</span></h3><p>Recovery, storage pressure, accessibility polish and an offline app shell.</p></div>
+    <div class="card phase now"><h3>Phase 0 <span class="status planned">Your photos</span></h3><p>Contracts verified, harness and annotation tool built. Waiting for 12+ annotated real photos to measure the gate.</p></div>
+    <div class="card phase"><h3>Phase 1 <span class="status built">Built</span></h3><p>The full journey with clearly labelled Demo detections: rooms, camera, Same object?, inventory, ZIP.</p></div>
+    <div class="card phase"><h3>Phase 2 <span class="status built">Built</span></h3><p>Live AI behind a private proxy with an invite code and enforced budgets, overlay revisits and comparison statuses.</p></div>
+    <div class="card phase"><h3>Phase 3 <span class="status built">Built</span></h3><p>Recovery, storage-full handling, offline app shell, 44 px targets. Real-device testing is next.</p></div>
   </div>
   <p class="callout">Out of scope on purpose: 3D mapping, continuous tracking, insurance valuation and any claim that the whole home has been inventoried.</p>
 </section>

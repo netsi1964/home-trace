@@ -5,6 +5,9 @@ All notable changes are documented here. The format follows [Keep a Changelog](h
 ## [Unreleased]
 
 ### Added
+- Phase 3: offline app shell (service worker, never caches API or data), offline notice, recovery of interrupted jobs, storage-full handling, focus management and 44 px hit areas on image badges, layouts checked at 360 px.
+- Phase 2: private analysis proxy with an invite code, a signed cookie, per-job and daily request limits (Netlify Blobs), live discovery and identity proposals, and a consent notice before the first analysis.
+- Phase 1: rooms and viewpoints, camera with clean snapshots, review with Same object? Yes / No / Skip, inventory with merge and undo, comparison statuses, and ZIP export/import with validation, in four languages, with Demo detections.
 - Netlify hosting: `@sveltejs/adapter-netlify` replaces `adapter-node`; `netlify.toml` with noindex and camera-only permissions headers.
 - GitHub Pages feature tour (`site/index.html`, published by `.github/workflows/pages.yml`).
 - Vision-LLM detector for Phase 0 (`--provider vision` and `vision-jev`), Qwen3-VL by default via

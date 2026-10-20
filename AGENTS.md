@@ -8,7 +8,7 @@ HomeTrace: a mobile-first web app that gives a home a visual memory. The user sc
 room, confirms object identity (**Same object? Yes / No / Skip**), revisits viewpoints with a transparent
 reference overlay, and exports everything as a portable ZIP. Data stays on the device.
 
-**Status:** pre-alpha, Phase 0. JEV contract verified (`docs/jev-contract.md`), evaluation harness and annotation tool built. No app flow yet.
+**Status:** prototype. Phases 1–3 are built (see the PRD-SEC-008 implementation status). Real-device testing and the real-photo evaluation are pending.
 
 ## Source of truth
 
@@ -40,7 +40,9 @@ reference overlay, and exports everything as a portable ZIP. Data stays on the d
 | `src/lib/inventory/` | Rooms, viewpoints, objects, observations |
 | `src/lib/matching/` | Identity proposals and user decisions |
 | `src/lib/compare/` | Comparison statuses |
-| `src/lib/storage/` | IndexedDB repository, drafts, recovery |
+| `src/lib/storage/` | IndexedDB (one transaction per mutation), app state, session URLs |
+| `src/lib/server/` | Private proxy: config, invite-code access, daily budget, analysis. Server-only |
+| `src/lib/components/` | Shared Svelte components (framed image with boxes, asset images) |
 | `src/lib/archive/` | ZIP export/import and validation |
 | `src/lib/providers/` | Provider adapters (`jev`, `vision`; demo lives in `scripts/`). Only place that knows a provider |
 | `src/lib/i18n/` | UI strings, kept outside components |
@@ -64,6 +66,12 @@ npm run eval    # Phase 0 evaluation, see docs/phase0.md. JEV runs need --confir
 
 TypeScript uses `erasableSyntaxOnly` and explicit `.ts` import extensions so `scripts/` run directly in Node.
 Server-only provider code lives in `*.server.ts` so SvelteKit keeps it out of the client bundle.
+
+## Data rules in code
+
+- Every change is a `Mutation` (`src/lib/inventory/mutation.ts`) applied with `apply()` from `store.svelte.ts`, which writes one IndexedDB transaction first.
+- Identity changes only through `src/lib/matching/decisions.ts`. Each returns its ReviewEvent with an undo snapshot. Provider code never edits observations.
+- Records in UI state are Svelte proxies. Copy them with JSON before IndexedDB or `structuredClone`; `db.ts` and `snapshotFor` already do this.
 
 ## Design rules
 
