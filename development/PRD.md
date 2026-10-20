@@ -26,7 +26,7 @@ Product promise: **Give your home a visual memory. Register your belongings room
 | Review | Freeze the captured frame and mark detected objects |
 | Identity | AI proposes existing-object matches; the user resolves uncertainty |
 | Organization | Rooms with multiple named viewpoints |
-| Revisits | Adjustable transparent reference image over live video with GPU-accelerated overlay blending |
+| Revisits | Adjustable transparent reference image over live video (CSS opacity, composited on the GPU by the browser) |
 | Storage | Inventory and images stored on the device, without an account or login |
 | Portability | Export/import a ZIP containing JSON and image files; same-device deep links via URL state |
 | Integration | Evaluate and use JEV Images where its measured capabilities support the task |
@@ -187,7 +187,7 @@ Acceptance: Recursive discovery cannot exceed the job budget. Interrupted jobs d
 | Frontend | SvelteKit and TypeScript | Fits the owner's experience and supports clear component boundaries |
 | Deployment | SvelteKit with adapter-netlify, Netlify Blobs for the server-side budget counter | Free HTTPS hosting with server functions; chosen 20 October 2026 (Deno Deploy was ruled out) |
 | Local database | IndexedDB through a typed repository, optionally Dexie | Structured data plus binary images |
-| Camera/image layers | getUserMedia, video, canvas, SVG overlays, and WebGL shaders | Separate clean image capture from annotations; GPU-accelerated overlay blending and batch processing |
+| Camera/image layers | getUserMedia, video, canvas, SVG overlays, and a CSS-opacity reference layer | Separate clean image capture from annotations; the browser composites the overlay on the GPU |
 | Validation | JSON Schema or Zod plus explicit schema version | Validate imports and adapter output |
 | Archive | ZIP library with size limits and path validation | Portable self-contained export |
 | AI interface | Provider adapter with mock and JEV implementations | Test workflows without inventing provider contracts |
@@ -201,7 +201,7 @@ These are recommendations. No cloud inventory database, user-account system, or 
 
 - Load time is **nice-to-have** rather than critical; prioritize simplicity and correctness.
 - Target modern browsers and recent phones (iPhone 11+, Android 8+) with 2+ GB RAM.
-- Use WebGL shaders for GPU-accelerated overlay blending and batch image processing where performance matters.
+- The overlay uses CSS opacity, which browsers composite on the GPU. Decided 20 October 2026: WebGL shaders add code and device risk without a visible benefit for a single blended layer; revisit only for effects such as difference blending.
 - Lazy-load heavy components and images; avoid blocking the camera preview on startup.
 
 ### Internationalization (i18n) and styling

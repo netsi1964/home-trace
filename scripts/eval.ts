@@ -32,7 +32,7 @@ import { createJevProvider, createJevVerifier } from '../src/lib/providers/jev/p
 import { DEFAULT_VISION_MODEL } from '../src/lib/providers/vision/contract.ts';
 import { createChatTransport, createVisionProvider } from '../src/lib/providers/vision/vision.server.ts';
 import { createDemoProvider } from './lib/demoProvider.ts';
-import { cropBox, cropRegion, prepareFrame, type PreparedImage } from './lib/images.ts';
+import { cropBox, cropRegion, prepareFrame, type PreparedImage } from '../src/lib/server/images.ts';
 
 const PER_JOB_LIMIT = 20; // PRD-FEAT-010 suggested MVP limit
 

@@ -1,7 +1,7 @@
 import sharp from 'sharp';
-import type { Box } from '../../src/lib/geometry/box.ts';
-import type { AnalysisImage } from '../../src/lib/providers/types.ts';
-import { JEV_IMAGE_LIMITS } from '../../src/lib/providers/jev/contract.ts';
+import type { Box } from '../geometry/box.ts';
+import type { AnalysisImage } from '../providers/types.ts';
+import { JEV_IMAGE_LIMITS } from '../providers/jev/contract.ts';
 
 /**
  * Node-side image preparation for Phase 0 (PRD-SEC-004 analysis flow, step 2):
