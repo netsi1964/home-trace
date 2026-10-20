@@ -67,7 +67,7 @@ Read `report.md`:
 - **Repeated-instance failures:** cases where two identical items became one box, or one was missed.
 - **Identity, false-same rate:** different items proposed as "the same". This is the costly error.
 
-Privacy: running the evaluation sends your photos and crops to OpenRouter and TypeSafe. Retention is not documented (see [jev-contract.md](jev-contract.md)). Only use photos you are comfortable sending.
+Privacy: running the evaluation sends your photos and crops to OpenRouter and TypeSafe, and with `vision` or `vision-jev` also to the vision model's provider. Retention is not documented (see [jev-contract.md](jev-contract.md) and [vision-contract.md](vision-contract.md)). Only use photos you are comfortable sending.
 
 ## Useful options
 
@@ -77,3 +77,7 @@ Privacy: running the evaluation sends your photos and crops to OpenRouter and Ty
 | `--no-identity` | Skip identity pairs |
 | `--max-identity-pairs 20` | More identity pairs; default 10 |
 | `--provider demo` | Free pipeline check with fake detections, labelled Demo |
+| `--provider vision` | Vision-LLM (Qwen3-VL by default, `VISION_MODEL` in `.env`) finds objects without a category list |
+| `--provider vision-jev` | Vision-LLM finds objects, JEV checks each box and judges identity |
+
+To compare, run `jev`, `vision` and `vision-jev` on the same fixtures and compare the reports. See [vision-contract.md](vision-contract.md).

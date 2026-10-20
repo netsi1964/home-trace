@@ -5,7 +5,8 @@ import type { Box } from '../geometry/box.ts';
  * only adapters in this folder translate between this contract and a provider.
  */
 
-export type DetectionSource = 'jev' | 'manual' | 'demo';
+/** `vision`: a vision-language model via OpenRouter (Phase 0 comparison, PRD-SEC-009 question 1). */
+export type DetectionSource = 'jev' | 'vision' | 'manual' | 'demo';
 
 export type Detection = {
 	id: string;
@@ -102,7 +103,7 @@ export type IdentityResult = {
 };
 
 export interface AnalysisProvider {
-	readonly id: 'demo' | 'jev';
+	readonly id: 'demo' | 'jev' | 'vision';
 	/** Finds visible object candidates in one frame. */
 	discover(image: AnalysisImage, budget: JobBudget, signal?: AbortSignal): Promise<DiscoveryResult>;
 	/** Judges whether two crops show the same physical object. */

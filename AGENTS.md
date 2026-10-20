@@ -41,7 +41,7 @@ reference overlay, and exports everything as a portable ZIP. Data stays on the d
 | `src/lib/compare/` | Comparison statuses |
 | `src/lib/storage/` | IndexedDB repository, drafts, recovery |
 | `src/lib/archive/` | ZIP export/import and validation |
-| `src/lib/providers/` | Provider adapters (`mock`, `jev`). Only place that knows a provider |
+| `src/lib/providers/` | Provider adapters (`jev`, `vision`; demo lives in `scripts/`). Only place that knows a provider |
 | `src/lib/i18n/` | UI strings, kept outside components |
 | `src/routes/` | Screens and the private proxy route |
 | `scripts/` | Node-only tools: `eval.ts`, demo fixture renderer. Run with Node type stripping |

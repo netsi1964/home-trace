@@ -33,7 +33,7 @@ export async function prepareFrame(input: Buffer): Promise<PreparedImage> {
  * Crops a normalised box with padding, and upscales small crops so the short side meets the
  * provider minimum. Upscaling adds no detail; it only satisfies the documented size limit.
  */
-export async function cropBox(frame: PreparedImage, box: Box, pad = 0.05): Promise<AnalysisImage> {
+export async function cropBox(frame: AnalysisImage, box: Box, pad = 0.05): Promise<AnalysisImage> {
 	const L = JEV_IMAGE_LIMITS;
 	const x0 = Math.max(0, box.x - pad);
 	const y0 = Math.max(0, box.y - pad);

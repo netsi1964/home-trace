@@ -323,3 +323,24 @@ function coverOfSmaller(a: Box, b: Box): number {
 	const iy = Math.max(0, Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y));
 	return (ix * iy) / Math.min(a.width * a.height, b.width * b.height);
 }
+
+/**
+ * Presence check for boxes proposed by another detector: one Noul per crop, all crops in one
+ * request. Each crop is introduced by a numbered text item so the instruction can name it.
+ */
+export function verifyCropsRequest(model: string, crops: { label: string; part: ImagePart }[]): DecisionsRequest {
+	const state: DecisionsRequest['state'] = [];
+	const questions: Record<string, Question> = {};
+	crops.forEach((c, i) => {
+		state.push(`Crop ${i + 1}, cut from a photo of a room in a home:`, c.part);
+		questions[`present__${i}`] = { type: 'noul', instructions: `Crop ${i + 1} clearly shows a ${c.label}.` };
+	});
+	return { model, state, questions };
+}
+
+export function readVerifyCrops(res: DecisionsResponse, count: number): (number | null)[] {
+	return Array.from({ length: count }, (_, i) => {
+		const a = readNoul(res.answers[`present__${i}`]);
+		return a.ok ? a.value.noul : null;
+	});
+}

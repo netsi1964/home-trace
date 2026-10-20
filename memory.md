@@ -18,6 +18,8 @@ every session. Put rules in `AGENTS.md` and requirements in `development/PRD.md`
   Phase 0 harness (`npm run eval`), annotation tool (`/phase0/annotate`), synthetic Demo fixtures.
 - Demo findings: JEV has no multi-box answer; count-then-locate plus per-strip locating for repeats works
   on drawings; identity judged 3 of 5 lookalike pairs "same". See `docs/jev-contract.md`.
+- 2026-10-20: Sten asked for a vision-LLM detector next to JEV. `vision` / `vision-jev` providers built;
+  on Demo drawings Qwen3-VL found 19/19 without a category list but is 5–10× slower (see `docs/vision-contract.md`).
 - Next: Sten takes ≥ 12 real photos, annotates, runs the live eval (`docs/phase0.md`). Then decide
   PRD-SEC-009 question 1 (JEV alone or extra detector) before Phase 1.
 

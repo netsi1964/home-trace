@@ -255,6 +255,8 @@ State is persisted to IndexedDB atomically; the query string supplements but doe
 
 If automatic discovery does not meet the evaluation target, document the limitation. The owner may then choose an additional detector behind the adapter boundary. Do not silently send images to another provider or incur additional provider charges.
 
+On 20 October 2026 the owner asked for a vision-language model detector (via OpenRouter) to be evaluated next to JEV in Phase 0. It sits behind the same adapter boundary as provider `vision`. The contract and first Demo measurements are in `docs/vision-contract.md`. Choosing it for the product remains a decision after evaluation on real photos.
+
 ### Application-level analysis contract
 
 The following is an internal application contract, not the JEV HTTP request/response format:
@@ -266,7 +268,7 @@ type Detection = {
   label: string;
   category: string | null;
   box: Box; // Normalized to 0..1 in the correctly oriented captured frame.
-  source: 'jev' | 'manual' | 'demo';
+  source: 'jev' | 'vision' | 'manual' | 'demo'; // 'vision': optional extra detector, see PRD-SEC-009
   providerConfidence: number | null;
   presence: 'supported' | 'uncertain';
 };

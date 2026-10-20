@@ -5,8 +5,11 @@
  *   npm run eval -- --fixtures fixtures/demo                     # demo provider, free
  *   npm run eval -- --fixtures private-fixtures/home --provider jev --dry-run
  *   npm run eval -- --fixtures private-fixtures/home --provider jev --confirm-paid --max-requests 40
+ *   npm run eval -- --fixtures private-fixtures/home --provider vision-jev --confirm-paid
  *
- * JEV needs OPEN_ROUTER_API_KEY in .env. Paid requests are never retried automatically.
+ * Providers: demo (free), jev, vision (vision-LLM, model from VISION_MODEL), vision-jev
+ * (vision-LLM finds objects, JEV checks each box and judges identity).
+ * Live providers need OPEN_ROUTER_API_KEY in .env. Paid requests are never retried automatically.
  * Results on demo fixtures or with the demo provider never represent JEV quality (T24).
  */
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
@@ -23,8 +26,11 @@ import {
 } from '../src/lib/evaluation/metrics.ts';
 import { BudgetExceededError, JobBudget, type AnalysisProvider, type Usage } from '../src/lib/providers/types.ts';
 import { JEV_MODEL } from '../src/lib/providers/jev/contract.ts';
-import { addUsage, createJevTransport, emptyUsage } from '../src/lib/providers/jev/jev.server.ts';
-import { createJevProvider } from '../src/lib/providers/jev/provider.server.ts';
+import { createJevTransport } from '../src/lib/providers/jev/jev.server.ts';
+import { addUsage, emptyUsage } from '../src/lib/providers/shared.ts';
+import { createJevProvider, createJevVerifier } from '../src/lib/providers/jev/provider.server.ts';
+import { DEFAULT_VISION_MODEL } from '../src/lib/providers/vision/contract.ts';
+import { createChatTransport, createVisionProvider } from '../src/lib/providers/vision/vision.server.ts';
 import { createDemoProvider } from './lib/demoProvider.ts';
 import { cropBox, cropRegion, prepareFrame, type PreparedImage } from './lib/images.ts';
 
@@ -44,7 +50,14 @@ const { values: args } = parseArgs({
 	}
 });
 
-const providerId = args.provider === 'jev' ? 'jev' : args.provider === 'demo' ? 'demo' : fail(`Unknown provider "${args.provider}"`);
+const PROVIDERS = ['demo', 'jev', 'vision', 'vision-jev'] as const;
+type ProviderId = (typeof PROVIDERS)[number];
+const providerId: ProviderId = (PROVIDERS as readonly string[]).includes(args.provider)
+	? (args.provider as ProviderId)
+	: fail(`Unknown provider "${args.provider}". Use one of: ${PROVIDERS.join(', ')}`);
+const visionModel = process.env.VISION_MODEL || DEFAULT_VISION_MODEL;
+const modelLabel =
+	providerId === 'jev' ? JEV_MODEL : providerId === 'vision' ? visionModel : providerId === 'vision-jev' ? `${visionModel} + ${JEV_MODEL}` : null;
 const maxRequests = positiveInt(args['max-requests'], 'max-requests');
 const maxPairs = positiveInt(args['max-identity-pairs'], 'max-identity-pairs');
 
@@ -54,20 +67,20 @@ const selected = args.images ? new Set(args.images.split(',')) : null;
 const images = gt.images.filter((i) => !selected || selected.has(i.id));
 const pairs = args['no-identity'] ? [] : pickPairs(identityPairs({ ...gt, images }), maxPairs);
 
-// Upper bound: count + locate + one per strip for each image, and one per identity pair.
-const plannedRequests = images.length * 5 + pairs.length;
+// Upper bound per image: JEV count + locate + 3 strips; vision 1 (+ JEV checks). One per identity pair.
+const plannedRequests = images.length * (providerId === 'vision' ? 1 : providerId === 'vision-jev' ? 3 : 5) + pairs.length;
 const isDemo = providerId === 'demo' || gt.demo;
 
 console.log(`Fixtures: ${fixturesDir}${gt.demo ? ' [Demo fixtures]' : ''}`);
-console.log(`Provider: ${providerId}${providerId === 'jev' ? ` (${JEV_MODEL} via OpenRouter)` : ' [Demo]'}`);
+console.log(`Provider: ${providerId}${modelLabel ? ` (${modelLabel} via OpenRouter)` : ' [Demo]'}`);
 console.log(`Images: ${images.length}, identity pairs: ${pairs.length}, planned requests ≤ ${plannedRequests}, run budget ${maxRequests}`);
 
 if (args['dry-run']) {
 	console.log('Dry run: no requests sent.');
 	process.exit(0);
 }
-if (providerId === 'jev' && !args['confirm-paid']) {
-	fail('JEV requests are paid. Re-run with --confirm-paid (and check --max-requests) to send them.');
+if (providerId !== 'demo' && !args['confirm-paid']) {
+	fail('Provider requests are paid. Re-run with --confirm-paid (and check --max-requests) to send them.');
 }
 
 const technicalLog: unknown[] = [];
@@ -75,16 +88,27 @@ const technicalLog: unknown[] = [];
 const frameSource = new WeakMap<object, AnnotatedImage>();
 const cropSource = new WeakMap<object, IdentityPair['a']>();
 
-const provider: AnalysisProvider =
-	providerId === 'jev'
-		? createJevProvider({
-				transport: createJevTransport({
-					apiKey: process.env.OPEN_ROUTER_API_KEY ?? '',
-					log: (e) => technicalLog.push(e)
-				}),
-				crop: (image, region) => cropRegion(image, region)
-			})
-		: createDemoProvider({ frame: (img) => frameSource.get(img), crop: (img) => cropSource.get(img) });
+const apiKey = process.env.OPEN_ROUTER_API_KEY ?? '';
+const log = (e: unknown) => technicalLog.push(e);
+const provider: AnalysisProvider = createProvider(providerId);
+
+function createProvider(id: ProviderId): AnalysisProvider {
+	if (id === 'demo') return createDemoProvider({ frame: (img) => frameSource.get(img), crop: (img) => cropSource.get(img) });
+	if (id === 'jev') {
+		return createJevProvider({ transport: createJevTransport({ apiKey, log }), crop: (image, region) => cropRegion(image, region) });
+	}
+	const chat = createChatTransport({ apiKey, log });
+	if (id === 'vision') return createVisionProvider({ transport: chat, model: visionModel });
+	// vision-jev: the vision-LLM proposes boxes, JEV checks each one and judges identity.
+	const jevTransport = createJevTransport({ apiKey, log });
+	const jev = createJevProvider({ transport: jevTransport });
+	const vision = createVisionProvider({
+		transport: chat,
+		model: visionModel,
+		verifier: createJevVerifier({ transport: jevTransport, crop: (image, box) => cropBox(image, box) })
+	});
+	return { id: 'vision', discover: vision.discover, compareIdentity: jev.compareIdentity };
+}
 
 const runBudget = new JobBudget(maxRequests);
 let usage: Usage = emptyUsage();
@@ -103,7 +127,7 @@ for (const image of images) {
 		const r = await provider.discover(frame, job);
 		usage = addUsage(usage, r.usage);
 		validBoxes += r.detections.length;
-		rejectedBoxes += r.rejected.filter((x) => x.reason.startsWith('box__')).length;
+		rejectedBoxes += r.rejected.filter((x) => /^box(__|:)/.test(x.reason)).length;
 		const score = scoreImage(image, r.detections.map((d) => ({ label: d.label, box: d.box })));
 		detectionResults.push({ ...score, durationMs: r.durationMs, requests: r.usage.requests, detections: r.detections, rejected: r.rejected });
 		console.log(`  ${image.id}: TP ${score.truePositives} FP ${score.falsePositives} FN ${score.falseNegatives} (${r.usage.requests} req, ${r.durationMs} ms)`);
@@ -132,10 +156,10 @@ const identity = summariseIdentity(identityOutcomes);
 const latencies = [...detectionResults.map((r) => r.durationMs), ...identityOutcomes.map((r) => r.durationMs)].sort((a, b) => a - b);
 
 const report = {
-	label: isDemo ? 'DEMO — not a measurement of JEV quality' : 'Live provider measurement',
+	label: isDemo ? 'DEMO — not a measurement of provider quality' : 'Live provider measurement',
 	createdAt: new Date().toISOString(),
 	provider: providerId,
-	model: providerId === 'jev' ? JEV_MODEL : null,
+	model: modelLabel,
 	fixtures: { path: path.relative(process.cwd(), fixturesDir), demo: gt.demo, images: images.length },
 	gate: GATE,
 	detection,
@@ -208,7 +232,7 @@ function recordError(stage: string, id: string, e: unknown): string | null {
 	console.error(`  ${stage} ${id}: ${message}`);
 	// Stop on budget exhaustion and on any provider error: no automatic retry of paid requests.
 	if (e instanceof BudgetExceededError) return 'run budget reached';
-	if (e instanceof Error && e.name === 'JevRequestError') return `provider error: ${message}`;
+	if (e instanceof Error && (e.name === 'JevRequestError' || e.name === 'VisionRequestError')) return `provider error: ${message}`;
 	return null;
 }
 

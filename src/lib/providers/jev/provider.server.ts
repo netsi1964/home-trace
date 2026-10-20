@@ -11,13 +11,16 @@ import {
 	readStrip,
 	stripRequest,
 	STRIPS,
+	readVerifyCrops,
+	verifyCropsRequest,
 	readIdentity,
 	readLocations,
 	type Category,
 	type CategoryCount,
 	type IdentityThresholds
 } from './discovery.ts';
-import { addUsage, emptyUsage, type JevTransport } from './jev.server.ts';
+import { addUsage, emptyUsage, toBase64 } from '../shared.ts';
+import type { JevTransport } from './jev.server.ts';
 
 export type JevProviderOptions = {
 	transport: JevTransport;
@@ -53,7 +56,7 @@ export function assertJevImage(image: AnalysisImage): asserts image is AnalysisI
 
 function toPart(image: AnalysisImage) {
 	assertJevImage(image);
-	return imagePart(image.mimeType, Buffer.from(image.bytes).toString('base64'));
+	return imagePart(image.mimeType, toBase64(image.bytes));
 }
 
 export function createJevProvider(opts: JevProviderOptions): AnalysisProvider {
@@ -116,5 +119,34 @@ export function createJevProvider(opts: JevProviderOptions): AnalysisProvider {
 			// Noul has no confidence field; the yes-probability is not a calibrated identity probability.
 			return { outcome: r.outcome, providerConfidence: null, rawScore: r.noul, usage: addUsage(emptyUsage(), usage), durationMs };
 		}
+	};
+}
+
+/** Crops per JEV verification request; keeps each request far below the 32 MiB body limit. */
+const VERIFY_BATCH = 24;
+
+/**
+ * JEV as a presence verifier for boxes from another detector (combined Phase 0 strategy).
+ * `crop` must return padded crops that meet JEV's minimum size.
+ */
+export function createJevVerifier(opts: {
+	transport: JevTransport;
+	crop: (image: AnalysisImage, box: Box) => Promise<AnalysisImage>;
+	model?: string;
+}) {
+	const model = opts.model ?? JEV_MODEL;
+	return async (image: AnalysisImage, candidates: { label: string; box: Box }[], budget: JobBudget, signal?: AbortSignal) => {
+		const scores: (number | null)[] = [];
+		let usage = emptyUsage();
+		let durationMs = 0;
+		for (let start = 0; start < candidates.length; start += VERIFY_BATCH) {
+			const batch = candidates.slice(start, start + VERIFY_BATCH);
+			const crops = await Promise.all(batch.map(async (c) => ({ label: c.label, part: toPart(await opts.crop(image, c.box)) })));
+			const r = await opts.transport.send(verifyCropsRequest(model, crops), budget, signal);
+			scores.push(...readVerifyCrops(r.response, batch.length));
+			usage = addUsage(usage, r.usage);
+			durationMs += r.durationMs;
+		}
+		return { scores, usage, durationMs };
 	};
 }

@@ -1,5 +1,6 @@
 import { DecisionsResponseSchema, JEV_ENDPOINT, JEV_MODEL, redactRequest, type DecisionsRequest, type DecisionsResponse } from './contract.ts';
 import type { JobBudget, Usage } from '../types.ts';
+import { stripBase64 } from '../shared.ts';
 
 /**
  * Server-only transport for JEV via OpenRouter. The API key never leaves the server and is
@@ -83,25 +84,6 @@ export function createJevTransport(opts: JevTransportOptions): JevTransport {
 			}
 		}
 	};
-}
-
-export function addUsage(a: Usage, b: Usage): Usage {
-	const add = (x: number | null, y: number | null) => (x === null && y === null ? null : (x ?? 0) + (y ?? 0));
-	return {
-		requests: a.requests + b.requests,
-		inputTokens: add(a.inputTokens, b.inputTokens),
-		outputTokens: add(a.outputTokens, b.outputTokens),
-		reportedCost: add(a.reportedCost, b.reportedCost)
-	};
-}
-
-export const emptyUsage = (): Usage => ({ requests: 0, inputTokens: null, outputTokens: null, reportedCost: null });
-
-/** Removes long base64 runs and data URLs so error bodies can be logged. */
-export function stripBase64(text: string): string {
-	return text
-		.replace(/data:[a-z]+\/[a-z0-9.+-]+;base64,[A-Za-z0-9+/=]+/gi, '[data url redacted]')
-		.replace(/[A-Za-z0-9+/=]{200,}/g, '[base64 redacted]');
 }
 
 export { JEV_MODEL };

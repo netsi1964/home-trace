@@ -2,7 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { BudgetExceededError, JobBudget } from '../types.ts';
 import { edgesToBox, imagePart, JEV_MODEL, redactRequest } from './contract.ts';
 import { countRequest, DEFAULT_CATEGORIES, locateRequest, mergeStripDetections, readCounts, readIdentity, readLocations, readStrip, STRIPS } from './discovery.ts';
-import { createJevTransport, JevRequestError, stripBase64 } from './jev.server.ts';
+import { stripBase64 } from '../shared.ts';
+import { createJevTransport, JevRequestError } from './jev.server.ts';
 
 const part = imagePart('image/jpeg', 'AAAA');
 const lamp = DEFAULT_CATEGORIES.find((c) => c.key === 'lamp')!;
