@@ -7,6 +7,7 @@
 [build.environment]
   NODE_VERSION = "24"
 
+# Static files only. Server-rendered pages get the same headers from src/hooks.server.ts.
 # Private prototype: keep it out of search engines, and keep camera access same-origin.
 [[headers]]
   for = "/*"
