@@ -87,6 +87,8 @@
 			return;
 		}
 		selected = null;
+		// Keep keyboard and screen-reader users on the next question (PRD-SEC-006.7).
+		queueMicrotask(() => document.getElementById('same-title')?.focus());
 	}
 
 	async function addMarked() {
@@ -227,7 +229,7 @@
 			{#if current}
 				<section class="card stack" aria-labelledby="same-title">
 					<div class="row between">
-						<h2 id="same-title">{t('same.title')}</h2>
+						<h2 id="same-title" tabindex="-1">{t('same.title')}</h2>
 						<span class="num small" aria-live="polite">{t('same.progress', { done: reviewed, total: active.length })}</span>
 					</div>
 
@@ -389,7 +391,7 @@
 		border: none;
 		background: transparent;
 		text-decoration: underline;
-		min-height: 32px;
+		min-height: var(--tap);
 		padding: 0 4px;
 	}
 </style>

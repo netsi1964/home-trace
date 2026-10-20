@@ -69,6 +69,7 @@ export const es: Messages = {
 	'annotate.saved': 'Borrador guardado en este dispositivo.',
 	'annotate.notSaved': 'No se pudo guardar el borrador en este navegador. Exporta para conservar tu trabajo.',
 
+	'app.offline': "Sin conexión. Tu hogar y la revisión funcionan en este dispositivo; el análisis con IA necesita conexión.",
 	'app.loading': "Cargando tu hogar…",
 	'app.loadError': "No se pudieron leer los datos guardados:",
 	'nav.label': "Principal",

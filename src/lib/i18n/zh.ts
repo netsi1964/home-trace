@@ -67,6 +67,7 @@ export const zh: Messages = {
 	'annotate.saved': '草稿已保存在本设备上。',
 	'annotate.notSaved': '无法在此浏览器中保存草稿。请导出以保留你的工作。',
 
+	'app.offline': "离线。你的家和查看功能可在本设备上使用；AI 分析需要网络连接。",
 	'app.loading': "正在加载你的家…",
 	'app.loadError': "无法读取已保存的数据：",
 	'nav.label': "主菜单",

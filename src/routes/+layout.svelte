@@ -9,9 +9,20 @@
 
 	let { children }: LayoutProps = $props();
 
+	let online = $state(true);
+
 	onMount(() => {
 		initLocale();
 		void initApp();
+		online = navigator.onLine;
+		const up = () => (online = true);
+		const down = () => (online = false);
+		window.addEventListener('online', up);
+		window.addEventListener('offline', down);
+		return () => {
+			window.removeEventListener('online', up);
+			window.removeEventListener('offline', down);
+		};
 	});
 
 	const nav = [
@@ -60,6 +71,9 @@
 </header>
 
 <main id="main">
+	{#if !online}
+		<p class="notice warn" role="status">◌ {t('app.offline')}</p>
+	{/if}
 	{#if app.storageFull}
 		<p class="notice error" role="alert">{t('storage.full')} <a href="/data">{t('storage.fullAction')}</a></p>
 	{/if}

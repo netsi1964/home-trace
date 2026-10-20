@@ -140,8 +140,8 @@
 		height: 36px;
 	}
 	.link {
-		min-height: 32px;
-		min-width: 32px;
+		min-height: var(--tap);
+		min-width: var(--tap);
 		padding: 0 6px;
 		border: none;
 		background: transparent;

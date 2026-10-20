@@ -68,6 +68,7 @@ export const en = {
 	'annotate.saved': 'Draft saved on this device.',
 	'annotate.notSaved': 'Draft could not be saved in this browser. Export to keep your work.',
 
+	'app.offline': "Offline. Your home and review work on this device; AI analysis needs a connection.",
 	'app.loading': "Loading your home…",
 	'app.loadError': "Saved data could not be read:",
 	'nav.label': "Main",

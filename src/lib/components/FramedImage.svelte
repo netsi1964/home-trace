@@ -86,7 +86,7 @@
 			disabled={draw}
 			onclick={() => onselect?.(b.id)}
 		>
-			{b.n}
+			<span>{b.n}</span>
 		</button>
 	{/each}
 </div>
@@ -145,26 +145,39 @@
 		stroke: var(--focus);
 		stroke-dasharray: 6 4;
 	}
+	/* 44 × 44 px hit area (PRD-SEC-006.1) around a compact visible badge. */
 	.tag {
 		position: absolute;
-		min-height: 30px;
-		min-width: 30px;
+		min-height: 44px;
+		min-width: 44px;
+		padding: 0;
+		transform: translate(-8px, -8px);
+		border: none;
+		background: transparent;
+		display: grid;
+		place-items: start;
+	}
+	.tag span {
+		margin: 8px 0 0 8px;
+		min-height: 28px;
+		min-width: 28px;
 		padding: 0 6px;
-		transform: translate(-2px, -2px);
+		display: grid;
+		place-items: center;
 		border-radius: 6px;
 		border: 2px solid var(--box);
 		background: var(--surface);
 		font-size: 0.9rem;
 		font-family: var(--font-mono);
 	}
-	.tag.proposal {
+	.tag.proposal span {
 		border-style: dashed;
 	}
-	.tag.dismissed {
+	.tag.dismissed span {
 		opacity: 0.6;
 		text-decoration: line-through;
 	}
-	.tag.selected {
+	.tag.selected span {
 		background: var(--box-selected);
 		border-color: var(--box-selected);
 		color: #fff;

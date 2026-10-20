@@ -6,5 +6,7 @@
 		"erasableSyntaxOnly": true,
 		"types": ["$app/types", "node"]
 	},
-	"include": ["src", "scripts", "vite.config.ts"]
+	"include": ["src", "scripts", "vite.config.ts"],
+	// The service worker has its own WebWorker types (SvelteKit: $app/tsconfig/service-worker).
+	"exclude": ["src/service-worker.ts"]
 }

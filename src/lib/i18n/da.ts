@@ -69,6 +69,7 @@ export const da: Messages = {
 	'annotate.saved': 'Kladde gemt på denne enhed.',
 	'annotate.notSaved': 'Kladden kunne ikke gemmes i denne browser. Eksportér for at beholde dit arbejde.',
 
+	'app.offline': "Offline. Dit hjem og gennemgang virker på denne enhed; AI-analyse kræver forbindelse.",
 	'app.loading': "Indlæser dit hjem …",
 	'app.loadError': "Gemte data kunne ikke læses:",
 	'nav.label': "Hovedmenu",
