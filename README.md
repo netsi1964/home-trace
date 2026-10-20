@@ -3,6 +3,8 @@
 **A visual memory for your home.** Register your belongings room by room, then see what you find again
 and what looks different.
 
+**Feature tour:** https://netsi1964.github.io/home-trace/
+
 > **Status: pre-alpha, Phase 0.** The JEV contract is verified and an evaluation harness exists.
 > No user-facing app flow yet. Read [`development/PRD.md`](development/PRD.md) and [`docs/phase0.md`](docs/phase0.md).
 

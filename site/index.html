@@ -1,0 +1,731 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HomeTrace: a visual memory for your home</title>
+<meta name="description" content="HomeTrace is a phone-first web app that gives your home a visual memory. Scan rooms, confirm what is the same object, revisit with a transparent overlay, and see what you find again. Data stays on your device.">
+<meta property="og:title" content="HomeTrace">
+<meta property="og:description" content="Register your belongings room by room, then see what you find again and what looks different. Pre-alpha, open source.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2312343b'/%3E%3Cg fill='none' stroke='%23f4d58d' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10 22V10h12'/%3E%3Cpath d='M42 10h12v12'/%3E%3Cpath d='M54 42v12H42'/%3E%3Cpath d='M22 54H10V42'/%3E%3C/g%3E%3Cpath d='M32 17 17 30v17h30V30z' fill='%23f7f4ec'/%3E%3Crect x='27.5' y='34' width='9' height='13' rx='1.5' fill='%2312343b'/%3E%3C/svg%3E">
+<style>
+:root {
+  --bg: #f7f4ec;
+  --surface: #ffffff;
+  --surface-2: #efe9dc;
+  --ink: #1b1d1f;
+  --muted: #5d6266;
+  --line: #ddd5c4;
+  --brand: #12343b;
+  --brand-ink: #ffffff;
+  --brand-soft: #dcebec;
+  --amber: #b07d00;
+  --amber-bg: #f4d58d;
+  --amber-soft: #fbf0d2;
+  --plum: #8a1c5c;
+  --plum-soft: #f6e3ee;
+  --code-bg: #14262b;
+  --code-ink: #eef3f3;
+  --code-dim: #8fa6aa;
+  --shadow: 0 1px 2px rgba(18, 52, 59, .06), 0 8px 28px rgba(18, 52, 59, .09);
+  --radius: 16px;
+  --font: Avenir, Montserrat, Corbel, 'URW Gothic', source-sans-pro, sans-serif;
+  --mono: ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1517; --surface: #172024; --surface-2: #1f2a2f; --ink: #eef1f2; --muted: #a3adb2;
+    --line: #2e3a40; --brand: #f4d58d; --brand-ink: #12343b; --brand-soft: #1d3338;
+    --amber: #f4d58d; --amber-soft: #3a3115; --plum: #ff8cc6; --plum-soft: #3a1a2c; --code-bg: #0a1113;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 28px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1517; --surface: #172024; --surface-2: #1f2a2f; --ink: #eef1f2; --muted: #a3adb2;
+  --line: #2e3a40; --brand: #f4d58d; --brand-ink: #12343b; --brand-soft: #1d3338;
+  --amber: #f4d58d; --amber-soft: #3a3115; --plum: #ff8cc6; --plum-soft: #3a1a2c; --code-bg: #0a1113;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 28px rgba(0,0,0,.35);
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: var(--font); font-weight: normal; line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--brand); text-underline-offset: 3px; }
+a:hover { color: var(--plum); }
+:focus-visible { outline: 3px solid var(--plum); outline-offset: 3px; border-radius: 6px; }
+h1, h2, h3 { font-weight: normal; line-height: 1.15; margin: 0; letter-spacing: -.01em; }
+p { margin: 0 0 .8em; }
+code { font-family: var(--mono); font-size: .88em; background: var(--surface-2); padding: .1em .35em; border-radius: 5px; }
+
+/* top bar */
+.bar {
+  position: fixed; inset: 0 0 auto 0; z-index: 10; height: 60px;
+  display: flex; align-items: center; gap: 12px; padding: 0 20px;
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter: blur(12px); border-bottom: 1px solid var(--line);
+}
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink) !important; white-space: nowrap; }
+.brand svg { flex: none; }
+.bar .spacer { flex: 1; }
+.btn {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink) !important;
+  border-radius: 999px; font: inherit; font-size: .92rem; cursor: pointer; text-decoration: none;
+}
+.btn:hover { border-color: var(--plum); }
+.btn.primary { background: var(--brand); border-color: var(--brand); color: var(--brand-ink) !important; }
+.btn.icon { width: 44px; padding: 0; justify-content: center; }
+@media (max-width: 640px) { .hide-sm { display: none !important; } .bar { padding: 0 12px; gap: 8px; } }
+
+/* table of contents */
+.toc {
+  position: fixed; top: 60px; right: 12px; z-index: 20; width: min(340px, calc(100vw - 24px));
+  max-height: calc(100vh - 140px); overflow: auto; padding: 10px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow);
+}
+.toc[hidden] { display: none; }
+.toc ol { list-style: none; margin: 0; padding: 0; counter-reset: toc; }
+.toc li { counter-increment: toc; }
+.toc a { display: flex; gap: 10px; padding: 8px 10px; border-radius: 10px; color: var(--ink) !important; text-decoration: none; }
+.toc a::before { content: counter(toc, decimal-leading-zero); color: var(--muted); font-family: var(--mono); font-size: .8rem; padding-top: .15em; }
+.toc a:hover, .toc a[aria-current="true"] { background: var(--brand-soft); }
+
+/* slides */
+.deck { position: relative; min-height: 100%; padding: 84px 20px 96px; }
+.slide { max-width: 1120px; margin: 0 auto; display: none; animation: in .35s ease both; }
+.slide.active { display: block; }
+@keyframes in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .slide { animation: none; } }
+.no-js .slide { display: block; margin-bottom: 64px; }
+
+.kicker {
+  display: inline-flex; align-items: center; gap: 10px; font-size: .78rem; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 14px;
+}
+.status { font-size: .72rem; letter-spacing: .08em; padding: 2px 9px; border-radius: 999px; border: 1.5px solid currentColor; }
+.status.built { color: var(--brand); }
+.status.built::before { content: "✓ "; }
+.status.planned { color: var(--muted); border-style: dashed; }
+.status.planned::before { content: "◌ "; }
+.status.demo { color: var(--plum); }
+.status.demo::before { content: "◆ "; }
+.slide h2 { font-size: clamp(1.9rem, 4.2vw, 3rem); margin-bottom: 14px; }
+.lead { font-size: clamp(1.05rem, 1.7vw, 1.28rem); color: var(--muted); max-width: 62ch; }
+.grid { display: grid; gap: 20px; grid-template-columns: 1fr 1fr; margin-top: 28px; align-items: start; }
+.grid.three { grid-template-columns: repeat(3, 1fr); }
+.grid.wide-left { grid-template-columns: 6fr 5fr; }
+@media (max-width: 900px) { .grid, .grid.three, .grid.wide-left { grid-template-columns: 1fr; } }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; box-shadow: var(--shadow); min-width: 0; }
+.card h3 { font-size: 1.15rem; margin-bottom: 10px; }
+.card p:last-child, .card ul:last-child { margin-bottom: 0; }
+.card ul { margin: 0 0 .8em; padding-left: 1.2em; }
+.card li { margin: .25em 0; }
+.label { font-size: .75rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; display: block; }
+.small { font-size: .85rem; color: var(--muted); }
+.callout { margin-top: 20px; padding: 14px 18px; border-left: 4px solid var(--amber); background: var(--amber-soft); border-radius: 0 12px 12px 0; }
+
+/* code */
+.code { position: relative; background: var(--code-bg); color: var(--code-ink); border-radius: 12px; font-family: var(--mono); font-size: .84rem; line-height: 1.6; margin: 0 0 14px; overflow: hidden; }
+.code:last-child { margin-bottom: 0; }
+.code .head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,.08); color: var(--code-dim); font-size: .75rem; letter-spacing: .05em; }
+.code pre { margin: 0; padding: 14px 16px; overflow: auto; white-space: pre; }
+.code .copy { background: transparent; color: var(--code-dim); border: 1px solid rgba(255,255,255,.2); border-radius: 6px; font: inherit; font-size: .72rem; padding: 4px 10px; cursor: pointer; min-height: 32px; }
+.code .copy:hover { color: var(--code-ink); border-color: var(--code-ink); }
+.c { color: var(--code-dim); }
+.prompt { color: var(--code-dim); user-select: none; }
+
+/* tables */
+table { width: 100%; border-collapse: collapse; font-size: .93rem; }
+th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: normal; color: var(--muted); font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; }
+tr:last-child td { border-bottom: 0; }
+td.num { font-family: var(--mono); white-space: nowrap; }
+.table-wrap { overflow-x: auto; }
+
+/* hero */
+.hero { display: grid; grid-template-columns: 1.05fr .95fr; gap: 40px; align-items: center; min-height: calc(100vh - 200px); }
+@media (max-width: 900px) { .hero { grid-template-columns: 1fr; min-height: 0; } }
+.hero h1 { font-size: clamp(2.4rem, 6vw, 4.2rem); margin: 18px 0; }
+.hero h1 em { font-style: normal; color: var(--amber); }
+.ctas { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; }
+.pill { display: inline-block; padding: 3px 12px; border-radius: 999px; font-size: .78rem; border: 1.5px solid var(--plum); color: var(--plum); }
+
+/* scene illustration */
+.scene { width: 100%; height: auto; border-radius: var(--radius); box-shadow: var(--shadow); display: block; }
+.scene .wall { fill: #e9e1d3; } .scene .floor { fill: #b48a62; }
+.scene .obj { stroke: #2b2b2b; stroke-width: 3; }
+.scene .box { fill: none; stroke: #12343b; stroke-width: 4; }
+.scene .box.dashed { stroke-dasharray: 4 8; stroke-linecap: round; }
+.scene .tag rect { fill: #12343b; } .scene .tag text { fill: #fff; font: 600 20px var(--mono); }
+.scene .ghost { opacity: .4; }
+.legend { list-style: none; padding: 0; margin: 14px 0 0; display: grid; gap: 6px; font-size: .92rem; }
+.legend li { display: flex; gap: 10px; align-items: baseline; }
+.legend b { font-family: var(--mono); font-weight: normal; min-width: 1.6em; text-align: center; background: var(--brand); color: var(--brand-ink); border-radius: 6px; padding: 0 6px; }
+
+/* flow */
+.flow { width: 100%; height: auto; }
+.flow .node { fill: var(--surface); stroke: var(--muted); stroke-width: 1.5; }
+.flow .node.you { stroke: var(--plum); stroke-width: 2.5; }
+.flow .node.ai { stroke: var(--brand); stroke-dasharray: 6 5; stroke-width: 2; }
+.flow text { fill: var(--ink); font-family: var(--font); font-size: 15px; }
+.flow .sub { fill: var(--muted); font-size: 12px; }
+.flow .arrow { stroke: var(--muted); stroke-width: 1.6; fill: none; marker-end: url(#arrowhead); }
+.flow #arrowhead path { fill: var(--muted); }
+.keyrow { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 12px; font-size: .88rem; color: var(--muted); }
+.keyrow span { display: inline-flex; align-items: center; gap: 8px; }
+.swatch { width: 28px; height: 16px; border-radius: 4px; border: 1.5px solid var(--muted); display: inline-block; }
+.swatch.ai { border: 2px dashed var(--brand); }
+.swatch.you { border-color: var(--plum); border-width: 3px; }
+
+/* same object card mock */
+.decide { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0 16px; }
+.crop { border: 1px solid var(--line); border-radius: 12px; padding: 10px; background: var(--surface-2); text-align: center; }
+.crop svg { width: 100%; height: auto; max-height: 140px; }
+.crop .small { margin: 6px 0 0; }
+.answers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.answers span { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 48px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--surface); }
+.answers .yes { border-color: var(--brand); background: var(--brand); color: var(--brand-ink); }
+.progress-text { font-family: var(--mono); font-size: .85rem; color: var(--muted); }
+
+/* overlay mock */
+.slider { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; margin-top: 14px; }
+.slider .rail { height: 8px; border-radius: 8px; background: var(--surface-2); position: relative; }
+.slider .rail i { position: absolute; inset: 0 50% 0 0; background: var(--brand); border-radius: 8px; }
+.slider .rail b { position: absolute; left: 50%; top: 50%; width: 24px; height: 24px; transform: translate(-50%, -50%); border-radius: 50%; background: var(--surface); border: 3px solid var(--brand); }
+
+/* steps */
+.steps { counter-reset: step; list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; }
+.steps > li { counter-increment: step; display: grid; grid-template-columns: 38px 1fr; gap: 14px; align-items: start; }
+.steps > li::before { content: counter(step); width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; background: var(--brand-soft); color: var(--ink); font-size: 1rem; }
+.steps h3 { font-size: 1.05rem; margin: 6px 0 6px; }
+
+/* roadmap */
+.phases { display: grid; gap: 14px; grid-template-columns: repeat(4, 1fr); margin-top: 28px; }
+@media (max-width: 900px) { .phases { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px) { .phases { grid-template-columns: 1fr; } }
+.phase { border-top: 5px solid var(--line); }
+.phase.now { border-top-color: var(--plum); }
+.phase h3 { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+
+/* coffee */
+.coffee { text-align: center; padding: 34px 22px; background: linear-gradient(160deg, var(--amber-soft), var(--surface)); }
+.coffee img { display: inline-block; height: 52px; width: auto; }
+.coffee .quip { font-size: 1.1rem; max-width: 46ch; margin: 10px auto 22px; color: var(--muted); min-height: 3.2em; }
+
+/* bottom nav */
+.nav {
+  position: fixed; inset: auto 0 0 0; z-index: 10; height: 68px; display: flex; align-items: center; gap: 14px; padding: 0 20px;
+  background: color-mix(in srgb, var(--bg) 85%, transparent); backdrop-filter: blur(12px); border-top: 1px solid var(--line);
+}
+.progress { flex: 1; height: 4px; background: var(--line); border-radius: 4px; overflow: hidden; }
+.progress span { display: block; height: 100%; width: 0; background: var(--plum); transition: width .3s ease; }
+.count { font-family: var(--mono); font-size: .85rem; color: var(--muted); min-width: 5.5em; text-align: center; }
+.hint { font-size: .8rem; color: var(--muted); }
+.no-js .nav, .no-js .toc-btn { display: none; }
+footer.note { text-align: center; color: var(--muted); font-size: .8rem; margin-top: 30px; }
+</style>
+</head>
+<body class="no-js">
+<header class="bar">
+  <a class="brand" href="#/1" aria-label="HomeTrace, first slide">
+    <svg width="32" height="32" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#12343b"/><g fill="none" stroke="#f4d58d" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 22V10h12"/><path d="M42 10h12v12"/><path d="M54 42v12H42"/><path d="M22 54H10V42"/></g><path d="M32 17 17 30v17h30V30z" fill="#f7f4ec"/><rect x="27.5" y="34" width="9" height="13" rx="1.5" fill="#12343b"/></svg>
+    <span>HomeTrace</span>
+  </a>
+  <span class="spacer"></span>
+  <a class="btn hide-sm" href="https://github.com/netsi1964/home-trace">GitHub</a>
+  <a class="btn hide-sm" href="#/coffee">☕ Coffee</a>
+  <button class="btn toc-btn" id="tocBtn" aria-expanded="false" aria-controls="toc">Slides</button>
+  <button class="btn icon" id="themeBtn" aria-label="Toggle dark mode" aria-pressed="false">◐</button>
+</header>
+
+<nav class="toc" id="toc" hidden aria-label="All slides"><ol id="tocList"></ol></nav>
+
+<main class="deck" id="deck">
+
+<!-- 1 · Title -->
+<section class="slide" data-title="A visual memory for your home" id="s-title">
+  <div class="hero">
+    <div>
+      <span class="pill">Pre-alpha · Phase 0 · Open source · Apache-2.0</span>
+      <h1>Give your home a <em>visual memory</em>.</h1>
+      <p class="lead">Register your belongings room by room with your phone's camera. Later, hold up a faint copy of
+        the old photo, line it up, and see what you find again, what looks moved and what you could not spot.
+        No account. Your photos stay on your device.</p>
+      <div class="ctas">
+        <a class="btn primary" href="#/how">How it works →</a>
+        <a class="btn" href="#/phase0">What AI can really do</a>
+      </div>
+    </div>
+    <figure style="margin:0">
+      <svg class="scene" viewBox="0 0 600 450" role="img" aria-label="A living room drawing with a lamp, a table with two cups and a chair. Each object has a numbered box; the list beside it names them.">
+        <rect class="wall" width="600" height="280"/><rect class="floor" y="280" width="600" height="170"/>
+        <polygon class="obj" points="57,195 113,195 125,130 45,130" fill="#f3c969"/>
+        <rect x="82" y="195" width="6" height="140" fill="#555"/>
+        <rect class="obj" x="60" y="330" width="50" height="14" fill="#444"/>
+        <rect class="obj" x="210" y="260" width="210" height="14" fill="#6d4c33"/>
+        <rect class="obj" x="222" y="274" width="12" height="80" fill="#6d4c33"/>
+        <rect class="obj" x="396" y="274" width="12" height="80" fill="#6d4c33"/>
+        <rect class="obj" x="250" y="222" width="28" height="38" rx="5" fill="#fff"/>
+        <rect class="obj" x="340" y="222" width="28" height="38" rx="5" fill="#fff"/>
+        <rect class="obj" x="455" y="210" width="20" height="160" fill="#7b4b2a"/>
+        <rect class="obj" x="455" y="290" width="100" height="22" fill="#9a5f36"/>
+        <rect class="obj" x="540" y="290" width="15" height="80" fill="#7b4b2a"/>
+        <rect class="obj" x="240" y="60" width="120" height="85" fill="#3c4f76"/>
+        <rect x="252" y="70" width="96" height="65" fill="#a9c6e8"/>
+        <g>
+          <rect class="box" x="38" y="122" width="94" height="230"/>
+          <rect class="box" x="242" y="214" width="44" height="54"/>
+          <rect class="box dashed" x="332" y="214" width="44" height="54"/>
+          <rect class="box" x="447" y="202" width="116" height="176"/>
+          <rect class="box" x="232" y="52" width="136" height="101"/>
+        </g>
+        <g class="tag">
+          <rect x="38" y="122" width="26" height="26"/><text x="45" y="142">1</text>
+          <rect x="242" y="214" width="26" height="26"/><text x="249" y="234">2</text>
+          <rect x="332" y="214" width="26" height="26"/><text x="339" y="234">3</text>
+          <rect x="447" y="202" width="26" height="26"/><text x="454" y="222">4</text>
+          <rect x="232" y="52" width="26" height="26"/><text x="239" y="72">5</text>
+        </g>
+      </svg>
+      <ul class="legend" aria-label="Objects in the drawing">
+        <li><b>1</b> Floor lamp · found again, no change detected</li>
+        <li><b>2</b> Cup · same object? <em>confirmed by you</em></li>
+        <li><b>3</b> Cup, identical · unresolved (dashed box)</li>
+        <li><b>4</b> Chair · possibly moved, review needed</li>
+        <li><b>5</b> Picture · found again, no change detected</li>
+      </ul>
+    </figure>
+  </div>
+</section>
+
+<!-- 2 · Why -->
+<section class="slide" data-title="Why HomeTrace?" id="why">
+  <span class="kicker">Motivation</span>
+  <h2>You know what you own. Until you need to.</h2>
+  <p class="lead">Where did the good scissors end up? Is the lamp in the photos for the insurance still in the
+    living room? Nobody keeps a spreadsheet of their home, and a camera roll does not know that the cup in
+    two photos is the same cup.</p>
+  <div class="grid three">
+    <div class="card">
+      <h3>What have I registered?</h3>
+      <p>An inventory with photos, rooms and the date each item was last seen. Five photos of one lamp count as one lamp.</p>
+    </div>
+    <div class="card">
+      <h3>Is this the same item?</h3>
+      <p>The app proposes matches with the old and new crop side by side. You answer <b>Same object? Yes / No / Skip</b>.</p>
+    </div>
+    <div class="card">
+      <h3>What looks different?</h3>
+      <p>Revisit a viewpoint with the old photo as a transparent overlay and compare. Proposals, never verdicts.</p>
+    </div>
+  </div>
+  <div class="card" style="margin-top:20px">
+    <span class="label">Design principles</span>
+    <div class="table-wrap"><table>
+      <tr><td>AI proposes, you decide</td><td>Identity is only committed after your answer. Later AI output never overrides it.</td></tr>
+      <tr><td>No false certainty</td><td>"Not rediscovered" never means "removed". Missing confidence stays empty, never an invented number. We say <b>No change detected</b>, never "has not moved".</td></tr>
+      <tr><td>Your data, your device</td><td>No account, no cloud database. Everything exports to an open ZIP with JSON and images.</td></tr>
+      <tr><td>Never colour alone</td><td>The first tester is colour-blind. Every status has a label, an icon and a number.</td></tr>
+    </table></div>
+  </div>
+</section>
+
+<!-- 3 · How it works -->
+<section class="slide" data-title="How it works" id="how">
+  <span class="kicker">The journey <span class="status planned">Planned app flow</span></span>
+  <h2>Scan, decide, revisit, compare.</h2>
+  <p class="lead">One button press is one bounded job. The live camera preview never triggers analysis, and the frame
+    sent for analysis never contains the overlay or any boxes.</p>
+  <div class="card" style="margin-top:24px">
+    <svg class="flow" viewBox="0 0 1060 300" role="img" aria-label="Flow: Scan, freeze frame, AI proposes objects, you answer Same object, inventory; later revisit with overlay, scan again and compare; you confirm changes.">
+      <defs><marker id="arrowhead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 10 5 0 10z"/></marker></defs>
+      <rect class="node" x="10" y="30" width="170" height="80" rx="14"/><text x="95" y="66" text-anchor="middle">Scan</text><text class="sub" x="95" y="88" text-anchor="middle">tap once, frame freezes</text>
+      <rect class="node ai" x="225" y="30" width="190" height="80" rx="14"/><text x="320" y="66" text-anchor="middle">Objects proposed</text><text class="sub" x="320" y="88" text-anchor="middle">numbered boxes + list</text>
+      <rect class="node you" x="460" y="30" width="190" height="80" rx="14"/><text x="555" y="66" text-anchor="middle">Same object?</text><text class="sub" x="555" y="88" text-anchor="middle">Yes · No · Skip</text>
+      <rect class="node" x="695" y="30" width="170" height="80" rx="14"/><text x="780" y="66" text-anchor="middle">Inventory</text><text class="sub" x="780" y="88" text-anchor="middle">one ID per item</text>
+      <rect class="node" x="10" y="190" width="170" height="80" rx="14"/><text x="95" y="226" text-anchor="middle">Revisit</text><text class="sub" x="95" y="248" text-anchor="middle">old photo as overlay</text>
+      <rect class="node" x="225" y="190" width="190" height="80" rx="14"/><text x="320" y="226" text-anchor="middle">Ready — scan</text><text class="sub" x="320" y="248" text-anchor="middle">clean frame only</text>
+      <rect class="node ai" x="460" y="190" width="190" height="80" rx="14"/><text x="555" y="226" text-anchor="middle">Change proposals</text><text class="sub" x="555" y="248" text-anchor="middle">found · moved? · unseen</text>
+      <rect class="node you" x="695" y="190" width="170" height="80" rx="14"/><text x="780" y="226" text-anchor="middle">You confirm</text><text class="sub" x="780" y="248" text-anchor="middle">nothing is automatic</text>
+      <rect class="node" x="905" y="110" width="145" height="80" rx="14"/><text x="977" y="146" text-anchor="middle">ZIP export</text><text class="sub" x="977" y="168" text-anchor="middle">JSON + images</text>
+      <path class="arrow" d="M180 70h40"/><path class="arrow" d="M415 70h40"/><path class="arrow" d="M650 70h40"/>
+      <path class="arrow" d="M780 110v20H95v55"/>
+      <path class="arrow" d="M180 230h40"/><path class="arrow" d="M415 230h40"/><path class="arrow" d="M650 230h40"/>
+      <path class="arrow" d="M865 70h20q15 0 15 15v25"/><path class="arrow" d="M865 230h20q15 0 15-15v-25"/>
+    </svg>
+    <div class="keyrow">
+      <span><i class="swatch ai"></i> dashed outline: an AI proposal</span>
+      <span><i class="swatch you"></i> thick outline: your decision</span>
+      <span><i class="swatch"></i> solid outline: stored data</span>
+    </div>
+  </div>
+</section>
+
+<!-- 4 · Rooms and viewpoints -->
+<section class="slide" data-title="Rooms & viewpoints" id="rooms">
+  <span class="kicker">Organisation <span class="status planned">Planned</span></span>
+  <h2>Rooms, and named places to stand.</h2>
+  <p class="lead">A room has several viewpoints, like <b>From the doorway</b> or <b>Bookshelf from the sofa</b>. Each
+    viewpoint keeps its scan history and one reference scan you choose yourself.</p>
+  <div class="grid">
+    <div class="card">
+      <span class="label">Example</span>
+      <ul>
+        <li><b>Living room</b>
+          <ul><li>From the doorway · 3 scans · reference: 12 Oct</li><li>Bookshelf from the sofa · 1 scan</li></ul></li>
+        <li><b>Kitchen</b>
+          <ul><li>Counter by the window · 2 scans</li></ul></li>
+      </ul>
+    </div>
+    <div class="card">
+      <span class="label">Rules that keep data honest</span>
+      <ul>
+        <li>A new scan never replaces the reference automatically.</li>
+        <li>One lamp seen from two viewpoints is still one inventory item, with two observations.</li>
+        <li>History keeps the room an item was in at the time, even after it moves.</li>
+        <li>Changing a reference affects future comparisons only.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 5 · Same object -->
+<section class="slide" data-title="Same object? Yes / No / Skip" id="same">
+  <span class="kicker">Identity <span class="status planned">Planned</span></span>
+  <h2>The one question that matters.</h2>
+  <p class="lead">AI is good at "this looks like a cup". It is bad at "this is <em>your</em> cup and not the identical one
+    next to it". So HomeTrace asks you, one item at a time.</p>
+  <div class="grid wide-left">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><h3>Same object?</h3><span class="progress-text">3 of 12 reviewed</span></div>
+      <div class="decide">
+        <div class="crop">
+          <svg viewBox="0 0 120 100" role="img" aria-label="Earlier crop: a white cup"><rect width="120" height="100" fill="#e9e1d3"/><rect x="38" y="20" width="36" height="56" rx="6" fill="#fff" stroke="#2b2b2b" stroke-width="3"/><path d="M74 34h12v24H74" fill="none" stroke="#2b2b2b" stroke-width="3"/><rect y="80" width="120" height="20" fill="#6d4c33"/></svg>
+          <p class="small">Before · Living room · 12 Oct</p>
+        </div>
+        <div class="crop">
+          <svg viewBox="0 0 120 100" role="img" aria-label="Current crop: a white cup with a small chip on the rim"><rect width="120" height="100" fill="#f2efe6"/><rect x="40" y="22" width="36" height="56" rx="6" fill="#fff" stroke="#2b2b2b" stroke-width="3"/><path d="M76 36h12v24H76" fill="none" stroke="#2b2b2b" stroke-width="3"/><path d="M48 22l4 5 4-5" fill="#f2efe6" stroke="#2b2b2b" stroke-width="2"/><rect y="80" width="120" height="20" fill="#8f9aa3"/></svg>
+          <p class="small">Now · Kitchen · 19 Oct</p>
+        </div>
+      </div>
+      <div class="answers" aria-label="Answers">
+        <span class="yes">✓ Yes</span><span>✕ No</span><span>→ Skip</span>
+      </div>
+    </div>
+    <div class="card">
+      <span class="label">What each answer does</span>
+      <ul>
+        <li><b>Yes</b> links the new observation to the item's stable ID.</li>
+        <li><b>No</b> rejects this match only. It never creates a new item by itself; you choose another candidate or create one.</li>
+        <li><b>Skip</b> keeps the observation unresolved. It does not count as an extra item.</li>
+        <li>Merges and corrections can be undone.</li>
+      </ul>
+      <p class="small">Two identical chairs may stay unresolved forever. That is allowed.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 6 · Overlay -->
+<section class="slide" data-title="Revisit with an overlay" id="overlay">
+  <span class="kicker">Revisits <span class="status planned">Planned</span></span>
+  <h2>Stand where you stood last time.</h2>
+  <p class="lead">The reference photo lies over the live camera at adjustable opacity. Line up door frames and walls,
+    then tap <b>Ready — scan</b>. The overlay is never part of the captured frame.</p>
+  <div class="grid wide-left">
+    <div class="card">
+      <svg class="scene" viewBox="0 0 600 340" role="img" aria-label="Live camera view with a faint, slightly offset copy of the earlier photo on top">
+        <rect class="wall" width="600" height="210"/><rect class="floor" y="210" width="600" height="130"/>
+        <g class="ghost" transform="translate(14 6)">
+          <rect x="230" y="40" width="120" height="85" fill="#3c4f76"/>
+          <rect x="455" y="160" width="20" height="150" fill="#7b4b2a"/><rect x="455" y="230" width="100" height="20" fill="#9a5f36"/>
+          <polygon points="57,145 113,145 125,85 45,85" fill="#f3c969"/>
+        </g>
+        <rect class="obj" x="230" y="40" width="120" height="85" fill="#3c4f76"/>
+        <rect class="obj" x="330" y="160" width="20" height="150" fill="#7b4b2a"/><rect class="obj" x="330" y="230" width="100" height="20" fill="#9a5f36"/>
+        <polygon class="obj" points="57,145 113,145 125,85 45,85" fill="#f3c969"/><rect x="82" y="145" width="6" height="140" fill="#555"/>
+      </svg>
+      <div class="slider" aria-hidden="true"><span class="small">Reference opacity</span><span class="rail"><i></i><b></b></span><span class="progress-text">40 %</span></div>
+    </div>
+    <div class="card">
+      <span class="label">Rules</span>
+      <ul>
+        <li>Opacity from 0 to 80 %, with a readable percentage and an accessible slider.</li>
+        <li>The full reference is shown in a frame. No hidden cropping when aspect ratios differ.</li>
+        <li>No claim of 3D positioning. If views cannot be compared, the result says <b>Uncertain viewpoint</b>.</li>
+        <li>Moving the slider sends nothing anywhere.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 7 · Statuses -->
+<section class="slide" data-title="Comparison statuses" id="statuses">
+  <span class="kicker">Compare <span class="status planned">Planned</span></span>
+  <h2>Careful words for what changed.</h2>
+  <p class="lead">Identity, visibility and movement are separate. A cup hidden behind a book is <em>not rediscovered</em>,
+    not gone. A box that moved in the photo is not proof that the chair moved.</p>
+  <div class="card" style="margin-top:24px">
+    <div class="table-wrap"><table>
+      <thead><tr><th>Status</th><th>Icon</th><th>Meaning</th><th>Example</th></tr></thead>
+      <tbody>
+        <tr><td>Found again — no change detected</td><td>✓</td><td>Same item, no change seen in this comparison</td><td class="num">4 items</td></tr>
+        <tr><td>Possibly moved</td><td>↔?</td><td>Same item, position looks different; you review it</td><td class="num">1 item</td></tr>
+        <tr><td>Moved — confirmed</td><td>↔</td><td>You confirmed a new place</td><td class="num">0 items</td></tr>
+        <tr><td>New to inventory</td><td>＋</td><td>You created it now; it may have been there for years</td><td class="num">2 items</td></tr>
+        <tr><td>Not rediscovered in this scan</td><td>◌</td><td>Seen before, not linked now. Could be hidden or out of view</td><td class="num">1 item</td></tr>
+        <tr><td>Unresolved</td><td>?</td><td>Not enough to decide identity or visibility</td><td class="num">1 item</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+  <p class="callout">"What has not moved?" is answered as <b>Found again with no change detected</b>, with a note that
+    movement between scans cannot be ruled out.</p>
+</section>
+
+<!-- 8 · Data -->
+<section class="slide" data-title="Your data stays yours" id="data">
+  <span class="kicker">Privacy &amp; portability <span class="status planned">Planned</span></span>
+  <h2>No account. No cloud inventory.</h2>
+  <p class="lead">Inventory, photos and decisions live in your browser. A ZIP export with open, versioned JSON and image
+    files is your backup and your way out.</p>
+  <div class="grid three">
+    <div class="card">
+      <h3>On the device</h3>
+      <p>IndexedDB holds metadata, images and drafts. Every decision is saved at once, and nothing is deleted to free space.</p>
+    </div>
+    <div class="card">
+      <h3>Portable ZIP</h3>
+      <p><code>manifest.json</code>, <code>inventory.json</code> and <code>assets/</code>, with SHA-256 hashes. Imports are validated and roll back on failure.</p>
+    </div>
+    <div class="card">
+      <h3>What leaves the phone</h3>
+      <p>Only the captured frame and needed crops, and only when you tap Scan. API keys live on the server, never in the app, URLs or exports.</p>
+    </div>
+  </div>
+  <p class="callout">Browser storage can be cleared. HomeTrace reminds you to export and never calls local storage a backup.</p>
+</section>
+
+<!-- 9 · Phase 0 -->
+<section class="slide" data-title="What AI can really do" id="phase0">
+  <span class="kicker">Phase 0 · measured <span class="status built">Built</span> <span class="status demo">Demo data</span></span>
+  <h2>Measure first, promise later.</h2>
+  <p class="lead">Before building the app, HomeTrace tests whether AI can find and recognise household objects.
+    Three strategies run through the same harness against hand-annotated ground truth.</p>
+  <div class="card" style="margin-top:24px">
+    <div class="table-wrap"><table>
+      <thead><tr><th>Strategy</th><th>How</th><th>Precision</th><th>Recall</th><th>Per image</th></tr></thead>
+      <tbody>
+        <tr><td>JEV (TypeSafe)</td><td>Count 20 categories, locate each, split the image for repeats</td><td class="num">94 %</td><td class="num">89 %</td><td class="num">0.6–2.7 s</td></tr>
+        <tr><td>Vision-LLM (Qwen3-VL)</td><td>"List every object with a box" in one call</td><td class="num">100 %</td><td class="num">100 %</td><td class="num">8–21 s</td></tr>
+        <tr><td>Vision-LLM + JEV</td><td>The vision model finds, JEV checks each box and judges identity</td><td class="num">100 %</td><td class="num">100 %</td><td class="num">3–20 s</td></tr>
+      </tbody>
+    </table></div>
+    <p class="small" style="margin-top:12px">◆ Demo: four synthetic drawings with 19 objects, 20 October 2026. These numbers check that the pipeline works;
+      they say nothing about real homes yet. Gate for real photos: ≥ 12 photos, 90 % precision, 80 % recall.</p>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <span class="label">Findings so far</span>
+      <ul>
+        <li>JEV answers one box per question and has no "not found", so every box is paired with a yes/no check.</li>
+        <li>"The rightmost cup" returned the left cup again. Splitting the image into strips fixed it.</li>
+        <li>Asked "same object?", JEV said yes to 3 of 5 identical-looking pairs. That is why <b>you</b> confirm every match.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <span class="label">Verified contracts</span>
+      <ul>
+        <li><a href="https://github.com/netsi1964/home-trace/blob/main/docs/jev-contract.md">JEV via OpenRouter</a>, from official docs and live responses.</li>
+        <li><a href="https://github.com/netsi1964/home-trace/blob/main/docs/vision-contract.md">Vision-LLM via OpenRouter</a>: Qwen3-VL and Gemini box formats.</li>
+        <li>Hard request budgets, no automatic retries of paid calls, logs without image data.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 10 · Try the harness -->
+<section class="slide" data-title="Try the Phase 0 tools" id="try">
+  <span class="kicker">For contributors <span class="status built">Built</span></span>
+  <h2>Annotate your own photos and measure.</h2>
+  <p class="lead">The repo ships an in-browser annotation tool and an evaluation script. Photos never leave your machine
+    until you run a paid evaluation yourself.</p>
+  <div class="grid">
+    <ol class="steps">
+      <li><div><h3>Set up</h3><div class="code"><div class="head"><span>terminal</span><button class="copy" type="button">Copy</button></div><pre><span class="prompt">$ </span>git clone https://github.com/netsi1964/home-trace
+<span class="prompt">$ </span>cd home-trace &amp;&amp; nvm use &amp;&amp; npm install
+<span class="prompt">$ </span>npm run dev</pre></div></div></li>
+      <li><div><h3>Annotate</h3><p>Open <code>/phase0/annotate</code>, choose photos, drag boxes, give the same key to the same item in different photos. Export <code>groundtruth.json</code>.</p></div></li>
+    </ol>
+    <ol class="steps" start="3" style="counter-reset: step 2">
+      <li><div><h3>Free dry run</h3><div class="code"><div class="head"><span>terminal</span><button class="copy" type="button">Copy</button></div><pre><span class="prompt">$ </span>npm run eval -- --fixtures private-fixtures/home --provider vision-jev --dry-run</pre></div></div></li>
+      <li><div><h3>Measure</h3><p>Add <code>OPEN_ROUTER_API_KEY</code> to <code>.env</code> and run with <code>--confirm-paid</code>. A typical photo costs a fraction of a cent. Read <code>report.md</code>.</p>
+        <p class="small">Guide: <a href="https://github.com/netsi1964/home-trace/blob/main/docs/phase0.md">docs/phase0.md</a></p></div></li>
+    </ol>
+  </div>
+</section>
+
+<!-- 11 · Roadmap -->
+<section class="slide" data-title="Roadmap" id="roadmap">
+  <span class="kicker">Where we are</span>
+  <h2>Four phases, honest about each.</h2>
+  <div class="phases">
+    <div class="card phase now"><h3>Phase 0 <span class="status built">Now</span></h3><p>Verify provider contracts, annotate real photos, measure discovery and identity against the gate.</p></div>
+    <div class="card phase"><h3>Phase 1 <span class="status planned">Next</span></h3><p>The full journey with clearly labelled Demo detections: rooms, camera, Same object?, inventory, ZIP.</p></div>
+    <div class="card phase"><h3>Phase 2 <span class="status planned">Later</span></h3><p>Live AI behind a private proxy with enforced budgets, overlay revisits and comparison statuses.</p></div>
+    <div class="card phase"><h3>Phase 3 <span class="status planned">Later</span></h3><p>Recovery, storage pressure, accessibility polish and an offline app shell.</p></div>
+  </div>
+  <p class="callout">Out of scope on purpose: 3D mapping, continuous tracking, insurance valuation and any claim that the whole home has been inventoried.</p>
+</section>
+
+<!-- 12 · Coffee -->
+<section class="slide" data-title="Buy me a coffee" id="coffee">
+  <span class="kicker">Thank you</span>
+  <h2>If it helped, buy me a coffee ☕</h2>
+  <p class="lead">HomeTrace is free and open source under Apache-2.0. Made by Sten Hougaard
+    (<a href="https://netsi.dk">netsi.dk</a>).</p>
+  <div class="grid">
+    <div class="card coffee">
+      <p style="font-size:1.25rem;margin-bottom:0">Buy me a coffee :-)</p>
+      <p class="quip" id="quip">Help me caffeinate the next idea.</p>
+      <a href="https://www.buymeacoffee.com/netsi1964" target="_blank" rel="noopener noreferrer">
+        <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" width="187" height="52" loading="lazy">
+      </a>
+      <p class="small" style="margin-top:14px"><a href="https://www.buymeacoffee.com/netsi1964" target="_blank" rel="noopener noreferrer">buymeacoffee.com/netsi1964</a></p>
+    </div>
+    <div class="card">
+      <span class="label">Other ways to help</span>
+      <ul>
+        <li>Star the repo on <a href="https://github.com/netsi1964/home-trace">GitHub</a>.</li>
+        <li>Annotate a few photos of your own home, run the evaluation and <a href="https://github.com/netsi1964/home-trace/issues">open an issue</a> with the numbers (not the photos).</li>
+        <li>Read the <a href="https://github.com/netsi1964/home-trace/blob/main/development/PRD.md">PRD</a> and <a href="https://github.com/netsi1964/home-trace/blob/main/CONTRIBUTING.md">CONTRIBUTING.md</a>.</li>
+      </ul>
+      <div class="ctas">
+        <a class="btn primary" href="#/try">Try the tools →</a>
+        <a class="btn" href="#/1">Start over</a>
+      </div>
+    </div>
+  </div>
+  <footer class="note">Apache-2.0 · © Sten Hougaard</footer>
+</section>
+
+</main>
+
+<nav class="nav" aria-label="Slide navigation">
+  <button class="btn" id="prev" aria-label="Previous slide">←</button>
+  <div class="progress" aria-hidden="true"><span id="bar"></span></div>
+  <span class="count" id="count" aria-live="polite">1 / 12</span>
+  <span class="hint hide-sm">← → or swipe</span>
+  <button class="btn primary" id="next" aria-label="Next slide">→</button>
+</nav>
+
+<script>
+(() => {
+  document.body.classList.remove("no-js");
+  const slides = [...document.querySelectorAll(".slide")];
+  const bar = document.getElementById("bar");
+  const count = document.getElementById("count");
+  const tocList = document.getElementById("tocList");
+  const toc = document.getElementById("toc");
+  const tocBtn = document.getElementById("tocBtn");
+  let current = 0;
+
+  // Hash routing: #/3 or #/phase0
+  const keyOf = (i) => slides[i].id || String(i + 1);
+  slides.forEach((s, i) => {
+    const li = document.createElement("li");
+    const a = document.createElement("a");
+    a.href = `#/${keyOf(i)}`;
+    a.textContent = s.dataset.title || `Slide ${i + 1}`;
+    a.addEventListener("click", () => setToc(false));
+    li.append(a);
+    tocList.append(li);
+  });
+
+  function indexFromHash() {
+    const key = decodeURIComponent(location.hash.replace(/^#\/?/, ""));
+    if (!key) return 0;
+    const byId = slides.findIndex((s) => s.id === key);
+    if (byId >= 0) return byId;
+    const n = parseInt(key, 10);
+    return Number.isFinite(n) ? Math.min(Math.max(n - 1, 0), slides.length - 1) : 0;
+  }
+
+  function show(i, push = true) {
+    current = Math.min(Math.max(i, 0), slides.length - 1);
+    slides.forEach((s, j) => {
+      s.classList.toggle("active", j === current);
+      s.setAttribute("aria-hidden", j === current ? "false" : "true");
+    });
+    bar.style.width = `${((current + 1) / slides.length) * 100}%`;
+    count.textContent = `${current + 1} / ${slides.length}`;
+    document.title = `${slides[current].dataset.title} · HomeTrace`;
+    tocList.querySelectorAll("a").forEach((a, j) => a.setAttribute("aria-current", j === current ? "true" : "false"));
+    if (push) history.replaceState(null, "", `#/${keyOf(current)}`);
+    window.scrollTo({ top: 0 });
+  }
+
+  window.addEventListener("hashchange", () => show(indexFromHash(), false));
+  document.getElementById("prev").addEventListener("click", () => show(current - 1));
+  document.getElementById("next").addEventListener("click", () => show(current + 1));
+
+  document.addEventListener("keydown", (e) => {
+    if (e.target.closest("input, textarea, select") || e.altKey || e.ctrlKey || e.metaKey) return;
+    if (e.key === "ArrowRight" || e.key === "PageDown" || (e.key === " " && !e.shiftKey)) { e.preventDefault(); show(current + 1); }
+    else if (e.key === "ArrowLeft" || e.key === "PageUp" || (e.key === " " && e.shiftKey)) { e.preventDefault(); show(current - 1); }
+    else if (e.key === "Home") show(0);
+    else if (e.key === "End") show(slides.length - 1);
+    else if (e.key === "Escape") setToc(false);
+  });
+
+  let x0 = null, y0 = null;
+  document.addEventListener("touchstart", (e) => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive: true });
+  document.addEventListener("touchend", (e) => {
+    if (x0 === null) return;
+    const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5 && !e.target.closest("pre, .table-wrap")) show(current + (dx < 0 ? 1 : -1));
+    x0 = y0 = null;
+  });
+
+  function setToc(open) { toc.hidden = !open; tocBtn.setAttribute("aria-expanded", String(open)); }
+  tocBtn.addEventListener("click", () => setToc(toc.hidden));
+  document.addEventListener("click", (e) => { if (!toc.hidden && !e.target.closest("#toc, #tocBtn")) setToc(false); });
+
+  // Copy buttons copy commands without the "$ " prompts.
+  document.querySelectorAll(".copy").forEach((b) => b.addEventListener("click", async () => {
+    const pre = b.closest(".code").querySelector("pre").cloneNode(true);
+    pre.querySelectorAll(".prompt").forEach((p) => p.remove());
+    try { await navigator.clipboard.writeText(pre.textContent.trim()); b.textContent = "Copied"; }
+    catch { b.textContent = "Select & copy"; }
+    setTimeout(() => (b.textContent = "Copy"), 1500);
+  }));
+
+  const themeBtn = document.getElementById("themeBtn");
+  const root = document.documentElement;
+  const isDark = () => root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  const applyTheme = (t) => { if (t) root.dataset.theme = t; themeBtn.setAttribute("aria-pressed", String(isDark())); };
+  try { applyTheme(localStorage.getItem("hometrace-theme")); } catch { applyTheme(null); }
+  themeBtn.addEventListener("click", () => {
+    const next = isDark() ? "light" : "dark";
+    applyTheme(next);
+    try { localStorage.setItem("hometrace-theme", next); } catch { /* private mode */ }
+  });
+
+  const quips = [
+    "If this has been of any use whatsoever, a coffee will be accepted with a stiff upper lip and very poorly concealed delight.",
+    "Nobody expects a donation. Which is precisely why it would be so tremendously effective.",
+    "A small donation becomes coffee, then code, then a home that remembers where the scissors are.",
+    "I shan't beg. I shall merely stand here, looking hopeful, holding an empty cup. Not rediscovered: the coffee.",
+    "Same object? Yes: the empty mug on my desk, again.",
+    "Help me caffeinate the next idea.",
+  ];
+  document.getElementById("quip").textContent = quips[Math.floor(Math.random() * quips.length)];
+
+  show(indexFromHash(), false);
+})();
+</script>
+</body>
+</html>

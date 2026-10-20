@@ -48,6 +48,7 @@ reference overlay, and exports everything as a portable ZIP. Data stays on the d
 | `fixtures/` | Demo images with ground truth, always labelled **Demo** |
 | `private-fixtures/`, `eval-results/` | Real photos and their reports. Git-ignored, never committed |
 | `docs/` | User and contributor documentation |
+| `site/` | GitHub Pages feature tour, one self-contained HTML file. Mark unbuilt features **Planned**, demo numbers **Demo** |
 
 ## Commands
 
