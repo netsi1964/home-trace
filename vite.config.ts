@@ -1,5 +1,5 @@
 /// <reference types="vitest/config" />
-import adapter from '@sveltejs/adapter-node';
+import adapter from '@sveltejs/adapter-netlify';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
 
@@ -12,7 +12,7 @@ export default defineConfig({
 					filename.split(/[/\\]/).includes('node_modules') ? undefined : true
 			},
 
-			// Node host: the client app plus the private provider proxy route (PRD-SEC-004).
+			// Netlify: static client plus a Node function for server routes, later the private provider proxy (PRD-SEC-004).
 			adapter: adapter()
 		})
 	],

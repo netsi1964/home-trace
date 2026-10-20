@@ -30,3 +30,6 @@ vite.config.ts.timestamp-*
 
 # Phase 0 evaluation outputs (may reference private photos)
 eval-results/
+
+# Netlify local state and function output
+.netlify/

@@ -1,0 +1,17 @@
+# Netlify build for HomeTrace (PRD-SEC-004). adapter-netlify writes the client to build/
+# and the server function to .netlify/.
+[build]
+  command = "npm run build"
+  publish = "build"
+
+[build.environment]
+  NODE_VERSION = "24"
+
+# Private prototype: keep it out of search engines, and keep camera access same-origin.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+    Referrer-Policy = "no-referrer"
+    X-Content-Type-Options = "nosniff"
+    Permissions-Policy = "camera=(self), microphone=(), geolocation=()"

@@ -5,6 +5,7 @@ All notable changes are documented here. The format follows [Keep a Changelog](h
 ## [Unreleased]
 
 ### Added
+- Netlify hosting: `@sveltejs/adapter-netlify` replaces `adapter-node`; `netlify.toml` with noindex and camera-only permissions headers.
 - GitHub Pages feature tour (`site/index.html`, published by `.github/workflows/pages.yml`).
 - Vision-LLM detector for Phase 0 (`--provider vision` and `vision-jev`), Qwen3-VL by default via
   OpenRouter, with JEV as optional presence checker. `.env.example` documents the keys.

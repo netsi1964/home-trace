@@ -21,7 +21,8 @@ reference overlay, and exports everything as a portable ZIP. Data stays on the d
 
 ## Stack
 
-- SvelteKit 3 + TypeScript on adapter-node (confirmed 2026-10-19), Svelte 5 runes, mobile-first. Node ≥ 22.17.
+- SvelteKit 3 + TypeScript (confirmed 2026-10-19), Svelte 5 runes, mobile-first. Node ≥ 22.17.
+- Hosting: Netlify via `@sveltejs/adapter-netlify` and `netlify.toml` (chosen 2026-10-20). Deploy only committed files; never from a folder that holds `.env` or `private-fixtures/`.
 - IndexedDB through a typed repository (Dexie optional).
 - getUserMedia, video, canvas and SVG overlays.
 - JSON Schema or Zod with an explicit schema version.

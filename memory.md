@@ -23,6 +23,8 @@ every session. Put rules in `AGENTS.md` and requirements in `development/PRD.md`
 - Next: Sten takes ≥ 12 real photos, annotates, runs the live eval (`docs/phase0.md`). Then decide
   PRD-SEC-009 question 1 (JEV alone or extra detector) before Phase 1.
 
+- Hosting: Netlify free tier with adapter-netlify, chosen 2026-10-20 (Deno Deploy ruled out). Project `home-trace`.
+
 ## Open questions
 
 See "Decisions after the first technical evaluation" in `development/PRD.md` (PRD-SEC-009).

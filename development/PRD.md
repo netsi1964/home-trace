@@ -21,7 +21,7 @@ Product promise: **Give your home a visual memory. Register your belongings room
 | Name | HomeTrace |
 | Language | English code and documentation; UI strings localized to Danish, English, Spanish, Chinese |
 | Platform | Responsive SvelteKit web application designed primarily for phones |
-| Deployment | SvelteKit app on a Node host: client UI plus a small private server route for the provider proxy |
+| Deployment | SvelteKit on Netlify (free tier): client UI plus a small private server function for the provider proxy |
 | Camera | Live preview; image analysis starts only after an explicit button press |
 | Review | Freeze the captured frame and mark detected objects |
 | Identity | AI proposes existing-object matches; the user resolves uncertainty |
@@ -185,7 +185,7 @@ Acceptance: Recursive discovery cannot exceed the job budget. Interrupted jobs d
 | Component | Recommendation | Reason |
 | --- | --- | --- |
 | Frontend | SvelteKit and TypeScript | Fits the owner's experience and supports clear component boundaries |
-| Deployment | SvelteKit with adapter-node | One deployable serving the client app and the private proxy route |
+| Deployment | SvelteKit with adapter-netlify, Netlify Blobs for the server-side budget counter | Free HTTPS hosting with server functions; chosen 20 October 2026 (Deno Deploy was ruled out) |
 | Local database | IndexedDB through a typed repository, optionally Dexie | Structured data plus binary images |
 | Camera/image layers | getUserMedia, video, canvas, SVG overlays, and WebGL shaders | Separate clean image capture from annotations; GPU-accelerated overlay blending and batch processing |
 | Validation | JSON Schema or Zod plus explicit schema version | Validate imports and adapter output |
@@ -568,7 +568,7 @@ The first review should demonstrate room selection, capture, identity decisions,
 
 ## Sources and research status
 
-Research date: 19 October 2026. Confirmed product decisions come from the discussion with Sten. Stack, limits, and evaluation targets are recommendations. This revision (v1.3) replaces static SPA deployment with SvelteKit on Node (the provider proxy needs a server route) and scopes session URLs to the same device. v1.2 added WebGL shaders for overlay blending, query string state persistence, i18n support for UI (Danish, English, Spanish, Simplified Chinese), and specified typography while preserving all feature IDs and scenarios.
+Research date: 19 October 2026. Confirmed product decisions come from the discussion with Sten. Stack, limits, and evaluation targets are recommendations. This revision (v1.3) replaces static SPA deployment with SvelteKit on a server host (Netlify since 20 October 2026) (the provider proxy needs a server route) and scopes session URLs to the same device. v1.2 added WebGL shaders for overlay blending, query string state persistence, i18n support for UI (Danish, English, Spanish, Simplified Chinese), and specified typography while preserving all feature IDs and scenarios.
 
 1) TypeSafe AI, **Jev: For the builders AND dreamers**, 14 October 2026: https://typesafe.ai/blog/jev-1-14
 2) MDN, **getUserMedia**: https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia
